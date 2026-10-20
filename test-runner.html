@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>AEGIS — Test Suite v1.4</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Courier New',Courier,monospace;
+  background:#F5F0E6;color:#1A1510;font-size:12px;min-height:100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.hdr{
+  background:#1A1510;color:#F5F0E6;padding:18px 32px;
+  border-bottom:2px solid #2D7A4A;display:flex;align-items:baseline;gap:16px;
+}
+.hdr-title{font-size:16px;font-weight:700;letter-spacing:.08em}
+.hdr-sub{font-size:9px;color:#7A7060;letter-spacing:.14em;text-transform:uppercase}
+
+/* ── Controls ───────────────────────────────────────────────────── */
+.controls{
+  padding:12px 32px;background:#EDE8DA;border-bottom:1px solid #C8C0B0;
+  display:flex;gap:12px;align-items:center;
+}
+.run-btn{
+  background:#1A1510;color:#F5F0E6;border:none;cursor:pointer;
+  font-family:inherit;font-size:10px;font-weight:700;
+  padding:7px 18px;letter-spacing:.1em;text-transform:uppercase;
+}
+.run-btn:hover{background:#2D7A4A}
+.run-btn:disabled{background:#5A5040;cursor:default}
+#status-msg{font-size:9px;color:#8A8070;letter-spacing:.04em}
+
+/* ── Summary grid ───────────────────────────────────────────────── */
+.summary{
+  display:grid;grid-template-columns:repeat(6,1fr);
+  border-bottom:1px solid #C8C0B0;
+}
+.s-cell{
+  padding:14px 16px;text-align:center;border-right:1px solid #C8C0B0;
+  background:#EDE8DA;
+}
+.s-cell:last-child{border-right:none}
+.s-val{font-size:20px;font-weight:700;line-height:1}
+.s-lbl{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#8A8070;margin-top:3px}
+.c-pass{color:#2D7A4A} .c-fail{color:#C83030} .c-warn{color:#B87030}
+
+/* ── Type-coverage table ────────────────────────────────────────── */
+.section{padding:0 32px 20px}
+.section-hd{
+  font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#8A8070;
+  padding:14px 0 8px;border-bottom:1px solid #C8C0B0;
+}
+table{width:100%;border-collapse:collapse}
+th{
+  font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8A8070;
+  padding:7px 10px;text-align:left;border-bottom:1px solid #C8C0B0;background:#EDE8DA;
+}
+th:not(:first-child){text-align:center}
+td{padding:7px 10px;border-bottom:1px solid #E8E0D0;font-size:10px;vertical-align:middle}
+td:not(:first-child){text-align:center}
+tr:hover td{background:rgba(45,122,74,.04)}
+.t-ph{font-family:'Courier New',monospace;font-weight:700;font-size:9px}
+.cat-tag{
+  font-size:8px;padding:1px 4px;letter-spacing:.05em;text-transform:uppercase;
+  border:1px solid currentColor;
+}
+.cat-tag.pii{color:#2D7A4A} .cat-tag.secret{color:#C85020}
+
+.bar-wrap{display:flex;align-items:center;gap:6px}
+.bar-bg{flex:1;height:5px;background:#D8D0C0;max-width:70px}
+.bar-fill{height:100%;background:#2D7A4A;transition:width .4s}
+.bar-fill.warn{background:#B87030} .bar-fill.fail{background:#C83030}
+.acc{font-size:10px;font-weight:700;min-width:34px}
+
+/* ── Case list ──────────────────────────────────────────────────── */
+.case-list-hd{
+  display:grid;grid-template-columns:18px 130px 1fr 80px 70px;gap:6px;
+  padding:7px 32px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+  color:#8A8070;border-top:1px solid #C8C0B0;border-bottom:1px solid #C8C0B0;
+  background:#EDE8DA;
+}
+.case-row{
+  display:grid;grid-template-columns:18px 130px 1fr 80px 70px;gap:6px;
+  padding:5px 32px;border-bottom:1px solid #E8E0D0;font-size:10px;align-items:start;
+}
+.case-row:hover{background:rgba(45,122,74,.03)}
+.ci{font-weight:700;font-size:11px}
+.cid{font-family:'Courier New',monospace;color:#8A8070;font-size:9px;padding-top:1px;word-break:break-all}
+.cdesc{color:#3A3028}
+.cexp{font-size:9px;color:#8A8070;text-align:center}
+.cact{font-size:9px;text-align:center;font-weight:700}
+.cact.ok{color:#2D7A4A} .cact.bad{color:#C83030}
+
+.latency-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:#C8C0B0;border:1px solid #C8C0B0;margin-top:10px;
+}
+.lat-cell{background:#F5F0E6;padding:8px 12px;text-align:center}
+.lat-v{font-size:16px;font-weight:700}
+.lat-l{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8A8070;margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="hdr-title">AEGIS · Suite de Tests</span>
+  <span class="hdr-sub">v1.4 · 19 patrones · sin servidor · sin dependencias</span>
+</div>
+
+<div class="controls">
+  <button class="run-btn" id="run-btn">▶ Ejecutar tests</button>
+  <span id="status-msg">Haz clic para ejecutar la suite completa.</span>
+</div>
+
+<div id="summary-area"></div>
+<div id="results-area"></div>
+
+<script>
+// ── PATTERNS — identical copy of service-worker.js ────────────────────────
+const PATTERNS = [
+  {cat:"pii",type:"email_address",ph:"EMAIL_ADDRESS",
+   why:"Dirección de correo electrónico",
+   re:()=>/\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g},
+
+  {cat:"pii",type:"iban",ph:"IBAN",
+   why:"Número de cuenta bancaria internacional (IBAN)",
+   re:()=>/\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4})+(?:\s?[A-Z0-9]{1,3})?\b/g,
+   validate(s){
+     const c=s.replace(/\s/g,"").toUpperCase();
+     if(!/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(c))return false;
+     const r=(c.slice(4)+c.slice(0,4)).split("").map(ch=>
+       /[A-Z]/.test(ch)?(ch.charCodeAt(0)-55).toString():ch).join("");
+     let rem=0;for(const d of r)rem=(rem*10+ +d)%97;
+     return rem===1;
+   }},
+
+  {cat:"pii",type:"credit_card",ph:"CARD_NUMBER",
+   why:"Número de tarjeta bancaria (validado con algoritmo Luhn)",
+   re:()=>/\b(?:\d[ \-]?){13,19}\b/g,
+   validate(s){
+     const d=s.replace(/\D/g,"");
+     if(d.length<13||d.length>19)return false;
+     let sum=0,dbl=false;
+     for(let i=d.length-1;i>=0;i--){
+       let v=+d[i];if(dbl&&(v=v*2-(v>4?9:0)),dbl=!dbl,sum+=v);
+     }
+     return sum%10===0;
+   }},
+
+  {cat:"pii",type:"phone_number",ph:"PHONE_NUMBER",
+   why:"Número de teléfono",
+   re:()=>/(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g},
+
+  {cat:"pii",type:"dni_nie",ph:"DNI",
+   why:"DNI o NIE español (letra de control válida)",
+   re:()=>/\b[XYZxyz]?\d{7,8}[TRWAGMYFPDXBNJZSQVHLCKE]\b/g,
+   validate(s){
+     const L="TRWAGMYFPDXBNJZSQVHLCKE";
+     const c=s.toUpperCase().replace(/[\s-]/g,"");
+     const m=c.match(/^([XYZ]?)(\d{7,8})([A-Z])$/);
+     if(!m)return false;
+     const prefix=m[1]==="X"?"0":m[1]==="Y"?"1":m[1]==="Z"?"2":"";
+     return L[Number(prefix+m[2])%23]===m[3];
+   }},
+
+  {cat:"pii",type:"ipv4",ph:"IP_ADDRESS",
+   why:"Dirección IPv4 pública (puede identificar al usuario)",
+   re:()=>/\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
+   validate(s){
+     return !s.startsWith("127.")&&!s.startsWith("192.168.")&&
+            !/^10\./.test(s)&&!/^172\.(1[6-9]|2\d|3[01])\./.test(s)&&
+            s!=="0.0.0.0"&&!s.startsWith("255.");
+   }},
+
+  {cat:"secret",type:"jwt",ph:"JWT",
+   why:"Token JWT — credenciales de sesión codificadas en Base64",
+   re:()=>/\beyJ[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}/g},
+
+  {cat:"secret",type:"openai_key",ph:"OPENAI_KEY",
+   why:"Clave de API de OpenAI",
+   re:()=>/\bsk-(?:proj-|[a-zA-Z0-9]{2,8}-)?[A-Za-z0-9]{40,}\b/g},
+
+  {cat:"secret",type:"anthropic_key",ph:"ANTHROPIC_KEY",
+   why:"Clave de API de Anthropic / Claude",
+   re:()=>/\bsk-ant-[A-Za-z0-9\-_]{20,}\b/g},
+
+  {cat:"secret",type:"github_token",ph:"GITHUB_TOKEN",
+   why:"Token de acceso personal de GitHub",
+   re:()=>/\bgh[pousr]_[A-Za-z0-9]{36}\b/g},
+
+  {cat:"secret",type:"aws_key",ph:"AWS_KEY",
+   why:"Clave de acceso de AWS IAM",
+   re:()=>/\b(?:AKIA|AIPA|ASIA|AROA)[A-Z0-9]{16}\b/g},
+
+  {cat:"secret",type:"google_api_key",ph:"GOOGLE_KEY",
+   why:"Clave de API de Google Cloud",
+   re:()=>/\bAIza[A-Za-z0-9\-_]{35}\b/g},
+
+  {cat:"secret",type:"stripe_key",ph:"STRIPE_KEY",
+   why:"Clave de API de Stripe",
+   re:()=>/\b(?:sk|pk|rk)_(?:test|live)_[A-Za-z0-9]{16,}\b/g},
+
+  {cat:"secret",type:"private_key_header",ph:"PRIVATE_KEY",
+   why:"Cabecera de clave privada RSA/EC/Ed25519",
+   re:()=>/-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/g},
+
+  {cat:"secret",type:"bearer_token",ph:"BEARER_TOKEN",
+   why:"Token Bearer de autenticación HTTP",
+   re:()=>/\bBearer\s+([A-Za-z0-9\-_\.]{20,})/g},
+
+  {cat:"secret",type:"password_in_code",ph:"PASSWORD",
+   why:"Contraseña en código fuente o fichero de configuración",
+   re:()=>/(?:password|passwd|pwd|secret|db_pass)\s*[:=]\s*["']([^"'\s]{6,})["']/gi},
+
+  {cat:"secret",type:"mongodb_uri",ph:"MONGODB_URI",
+   why:"Cadena de conexión MongoDB con credenciales embebidas",
+   re:()=>/\bmongodb(?:\+srv)?:\/\/[^\s'"<>,\]]{8,}/g},
+
+  {cat:"secret",type:"slack_token",ph:"SLACK_TOKEN",
+   why:"Token de Slack (bot, usuario o app)",
+   re:()=>/\bxox[bpsa]-[0-9A-Za-z\-]{10,}/g},
+
+  {cat:"secret",type:"google_oauth_secret",ph:"GOOGLE_OAUTH",
+   why:"Client secret de OAuth de Google",
+   re:()=>/\bclient_secret\s*[:=]\s*["']?([A-Za-z0-9\-_]{20,})["']?/gi},
+];
+
+// ── Detection (same algorithm as regexSanitize in service-worker.js) ──────
+function detect(text) {
+  const counters={}, entityMap={}, interceptions=[];
+  for(const {cat,type,ph,re,validate,why} of PATTERNS){
+    const regex=re(), found=new Set();
+    for(const m of [...text.matchAll(regex)]){
+      const val=m[0];
+      if(found.has(val))continue;
+      if(validate&&!validate(val))continue;
+      found.add(val);
+      if(Object.entries(entityMap).some(([,v])=>v===val))continue;
+      counters[ph]=(counters[ph]||0)+1;
+      const placeholder=`[${ph}_${counters[ph]}]`;
+      entityMap[placeholder]=val;
+      interceptions.push({cat,type,ph,placeholder,why:why||""});
+    }
+  }
+  return interceptions;
+}
+
+// ── Test cases (mirrors datasets/pii.json + datasets/secrets.json) ────────
+const CASES=[
+  // PII — EMAIL_ADDRESS
+  {id:"email_tp_001",ph:"EMAIL_ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Standard email in sentence",
+   text:"Please send your CV to hr@company.es before Friday."},
+  {id:"email_tp_002",ph:"EMAIL_ADDRESS",cat:"pii",ok:true,n:2,
+   desc:"Two emails on one line",
+   text:"From: alice@example.com To: bob.smith+team@corp.co.uk"},
+  {id:"email_tp_003",ph:"EMAIL_ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Email in source-code string",
+   text:'const adminEmail = "admin@myapp.com"; sendWelcome(adminEmail);'},
+  {id:"email_tp_004",ph:"EMAIL_ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"All-caps email address",
+   text:"Contact SUPPORT@MEGACORP.COM for enterprise licenses."},
+  {id:"email_fp_001",ph:"EMAIL_ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"No TLD — server@localhost not an email",
+   text:"Connect to server@localhost for local dev."},
+  {id:"email_fp_002",ph:"EMAIL_ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Orphan @ — social mention, not email",
+   text:"Follow us @company on Twitter."},
+
+  // PII — IBAN
+  {id:"iban_tp_001",ph:"IBAN",cat:"pii",ok:true,n:1,
+   desc:"Spanish IBAN ES91 (valid checksum)",
+   text:"Número de cuenta: ES91 2100 0418 4502 0005 1332"},
+  {id:"iban_tp_002",ph:"IBAN",cat:"pii",ok:true,n:1,
+   desc:"German IBAN DE89 (valid checksum)",
+   text:"Bitte überweisen Sie auf IBAN DE89 3704 0044 0532 0130 00."},
+  {id:"iban_tp_003",ph:"IBAN",cat:"pii",ok:true,n:1,
+   desc:"British IBAN GB82 (valid checksum)",
+   text:"Send payment to GB82 WEST 1234 5698 7654 32 by Tuesday."},
+  {id:"iban_fp_001",ph:"IBAN",cat:"pii",ok:false,n:0,
+   desc:"ES99 — wrong check digits, checksum rejects it",
+   text:"My IBAN is ES99 2100 0418 4502 0005 1332."},
+  {id:"iban_fp_002",ph:"IBAN",cat:"pii",ok:false,n:0,
+   desc:"Too short — only 4 chars after country code",
+   text:"Model ES12 arrived today."},
+
+  // PII — CARD_NUMBER
+  {id:"card_tp_001",ph:"CARD_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"Visa 4111 1111 1111 1111 (valid Luhn)",
+   text:"Card ending in 1111: 4111 1111 1111 1111"},
+  {id:"card_tp_002",ph:"CARD_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"Mastercard BIN 51 — computed valid Luhn",
+   text:"Charge card 5100 0000 0000 0008 for the subscription."},
+  {id:"card_tp_003",ph:"CARD_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"Visa 4012-8888-8888-1881 with dashes (valid Luhn)",
+   text:"Customer card: 4012-8888-8888-1881"},
+  {id:"card_fp_001",ph:"CARD_NUMBER",cat:"pii",ok:false,n:0,
+   desc:"1234 5678 9012 3456 — invalid Luhn (sum mod 10 ≠ 0)",
+   text:"Order reference: 1234 5678 9012 3456 (not a card)."},
+  {id:"card_fp_002",ph:"CARD_NUMBER",cat:"pii",ok:false,n:0,
+   desc:"Only 8 digits — below 13-digit minimum",
+   text:"PIN: 1234 5678"},
+
+  // PII — PHONE_NUMBER
+  {id:"phone_tp_001",ph:"PHONE_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"Spanish mobile +34 612 345 678",
+   text:"Llámame al +34 612 345 678 esta tarde."},
+  {id:"phone_tp_002",ph:"PHONE_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"US phone +1 (555) 123-4567",
+   text:"Support line: +1 (555) 123-4567 (Mon–Fri)."},
+  {id:"phone_tp_003",ph:"PHONE_NUMBER",cat:"pii",ok:true,n:1,
+   desc:"Spanish landline 912 345 678",
+   text:"Oficina central: 912 345 678."},
+  {id:"phone_fp_001",ph:"PHONE_NUMBER",cat:"pii",ok:false,n:0,
+   desc:"PIN 4321 — only 4 digits, below 9-char minimum",
+   text:"Access PIN: 4321"},
+
+  // PII — DNI
+  {id:"dni_tp_001",ph:"DNI",cat:"pii",ok:true,n:1,
+   desc:"12345678Z — valid DNI (Z is correct for 14 mod 23)",
+   text:"DNI del paciente: 12345678Z"},
+  {id:"dni_tp_002",ph:"DNI",cat:"pii",ok:true,n:1,
+   desc:"X1234567L — valid NIE (L is correct for prefix+digits mod 23)",
+   text:"Número de extranjero: X1234567L"},
+  {id:"dni_fp_001",ph:"DNI",cat:"pii",ok:false,n:0,
+   desc:"12345678A — wrong control letter, validation rejects",
+   text:"ID: 12345678A (letra de control incorrecta)"},
+
+  // PII — IP_ADDRESS
+  {id:"ip_tp_001",ph:"IP_ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"8.8.8.8 — public (Google DNS)",
+   text:"Primary DNS resolver: 8.8.8.8"},
+  {id:"ip_tp_002",ph:"IP_ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"1.1.1.1 — public (Cloudflare DNS)",
+   text:"Configure DNS to 1.1.1.1 for faster resolution."},
+  {id:"ip_fp_001",ph:"IP_ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"192.168.1.1 — RFC-1918 private, excluded",
+   text:"Internal gateway: 192.168.1.1"},
+  {id:"ip_fp_002",ph:"IP_ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"10.0.0.47 — RFC-1918 private, excluded",
+   text:"Kubernetes pod IP: 10.0.0.47"},
+  {id:"ip_fp_003",ph:"IP_ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"127.0.0.1 — loopback, excluded",
+   text:"Dev server running at http://127.0.0.1:3000"},
+
+  // SECRETS — JWT
+  {id:"jwt_tp_001",ph:"JWT",cat:"secret",ok:true,n:1,
+   desc:"Classic HS256 JWT (3-part Base64URL, 10+ chars each)",
+   text:"const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';"},
+  {id:"jwt_fp_001",ph:"JWT",cat:"secret",ok:false,n:0,
+   desc:"Short Base64-like — only 2 parts, fails 3-part rule",
+   text:"Hash: eyJhbGci.short"},
+
+  // SECRETS — OPENAI_KEY
+  {id:"openai_tp_001",ph:"OPENAI_KEY",cat:"secret",ok:true,n:1,
+   desc:"Legacy sk-… key (43 chars after sk-)",
+   text:"OPENAI_API_KEY=sk-1234567890abcdefghijklmnopqrstuvwxyzABCDE"},
+  {id:"openai_tp_002",ph:"OPENAI_KEY",cat:"secret",ok:true,n:1,
+   desc:"New project-scoped sk-proj-… key",
+   text:"client = OpenAI(api_key='sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDE')"},
+  {id:"openai_fp_001",ph:"OPENAI_KEY",cat:"secret",ok:false,n:0,
+   desc:"sk- prefix but only 5 chars — below 40-char minimum",
+   text:"Error: sk-short is not a valid key."},
+
+  // SECRETS — ANTHROPIC_KEY
+  {id:"anthropic_tp_001",ph:"ANTHROPIC_KEY",cat:"secret",ok:true,n:1,
+   desc:"sk-ant-api03-… key in .env",
+   text:"ANTHROPIC_API_KEY=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTuvwxyz1234567890abc"},
+  {id:"anthropic_tp_002",ph:"ANTHROPIC_KEY",cat:"secret",ok:true,n:1,
+   desc:"sk-ant-api03-… key in TypeScript",
+   text:"const claude = new Anthropic({ apiKey: 'sk-ant-api03-XYZabcdefghij1234567890MNOP' });"},
+
+  // SECRETS — GITHUB_TOKEN
+  {id:"github_tp_001",ph:"GITHUB_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"Classic PAT ghp_ prefix + 36 alphanumeric",
+   text:"GH_TOKEN=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234"},
+  {id:"github_tp_002",ph:"GITHUB_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"OAuth app token gho_ prefix + 36 alphanumeric",
+   text:"Authorization: token gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234"},
+
+  // SECRETS — AWS_KEY
+  {id:"aws_tp_001",ph:"AWS_KEY",cat:"secret",ok:true,n:1,
+   desc:"AKIA prefix + 16 uppercase alphanumeric",
+   text:"AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"},
+  {id:"aws_tp_002",ph:"AWS_KEY",cat:"secret",ok:true,n:1,
+   desc:"ASIA prefix (assumed-role) + 16 chars",
+   text:'access_key = "ASIAIOSFODNN7EXAMPLE"'},
+  {id:"aws_fp_001",ph:"AWS_KEY",cat:"secret",ok:false,n:0,
+   desc:"AKIA prefix but only 5 chars — below 16-char minimum",
+   text:"Account: AKIA12345 (not a real key)"},
+
+  // SECRETS — GOOGLE_KEY
+  {id:"google_key_tp_001",ph:"GOOGLE_KEY",cat:"secret",ok:true,n:1,
+   desc:"AIza prefix + 35 chars",
+   text:"GOOGLE_API_KEY=AIzaSyDummyKey1234567890123456789012345"},
+
+  // SECRETS — STRIPE_KEY
+  {id:"stripe_tp_001",ph:"STRIPE_KEY",cat:"secret",ok:true,n:1,
+   desc:"Stripe secret test key (sk_test_…)",
+   text:"STRIPE_SECRET_KEY=sk_test_4eC39HqLyjWDarjtT1zdp7dc123456"},
+  {id:"stripe_tp_002",ph:"STRIPE_KEY",cat:"secret",ok:true,n:1,
+   desc:"Stripe publishable live key (pk_live_…)",
+   text:"const stripe = Stripe('pk_live_ABCDEFGHIJKLMNOPabcdefghij');"},
+
+  // SECRETS — PRIVATE_KEY
+  {id:"private_key_tp_001",ph:"PRIVATE_KEY",cat:"secret",ok:true,n:1,
+   desc:"RSA private key header",
+   text:"Here is my key:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA..."},
+  {id:"private_key_tp_002",ph:"PRIVATE_KEY",cat:"secret",ok:true,n:1,
+   desc:"Generic PKCS8 private key header",
+   text:"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC..."},
+
+  // SECRETS — BEARER_TOKEN
+  {id:"bearer_tp_001",ph:"BEARER_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"Bearer token in Authorization header (curl)",
+   text:"curl -H 'Authorization: Bearer eyABCDEFGHIJKLMNOPQRSTUVWXYZabc' https://api.example.com"},
+  {id:"bearer_tp_002",ph:"BEARER_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"Bearer token in Python requests dict",
+   text:"headers = {'Authorization': 'Bearer abcdef1234567890abcdef1234567890'}"},
+
+  // SECRETS — PASSWORD
+  {id:"password_tp_001",ph:"PASSWORD",cat:"secret",ok:true,n:1,
+   desc:"password = \"…\" in Python (6+ char value)",
+   text:'DB_PASSWORD = "s3cr3t_p4ssw0rd!"'},
+  {id:"password_tp_002",ph:"PASSWORD",cat:"secret",ok:true,n:1,
+   desc:"password: '…' in YAML config",
+   text:"database:\n  password: 'my_secure_password_123'"},
+  {id:"password_tp_003",ph:"PASSWORD",cat:"secret",ok:true,n:1,
+   desc:"pwd=\"…\" shorthand in .env",
+   text:'pwd="SuperSecret99!"'},
+  {id:"password_fp_001",ph:"PASSWORD",cat:"secret",ok:false,n:0,
+   desc:"pwd = 'abc' — value only 3 chars, below minimum",
+   text:"pwd = 'abc'"},
+
+  // SECRETS — MONGODB_URI
+  {id:"mongodb_tp_001",ph:"MONGODB_URI",cat:"secret",ok:true,n:1,
+   desc:"Standard mongodb:// connection string",
+   text:"MONGODB_URL=mongodb://admin:password@cluster.example.com:27017/mydb"},
+  {id:"mongodb_tp_002",ph:"MONGODB_URI",cat:"secret",ok:true,n:1,
+   desc:"Atlas SRV mongodb+srv:// URI",
+   text:"mongoose.connect('mongodb+srv://user:pass@cluster.mongodb.net/app')"},
+
+  // SECRETS — SLACK_TOKEN
+  {id:"slack_tp_001",ph:"SLACK_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"Bot token xoxb- + 10+ chars",
+   text:"SLACK_BOT_TOKEN=xoxb-EJEMPLO-FALSO-ABCDEFabcdef12345"},
+  {id:"slack_tp_002",ph:"SLACK_TOKEN",cat:"secret",ok:true,n:1,
+   desc:"User token xoxp- + 10+ chars",
+   text:"token = 'xoxp-EJEMPLO-FALSO-ZYXWVUzyxwvu0987'"},
+
+  // SECRETS — GOOGLE_OAUTH
+  {id:"google_oauth_tp_001",ph:"GOOGLE_OAUTH",cat:"secret",ok:true,n:1,
+   desc:"client_secret = \"…\" (20+ char value)",
+   text:'client_secret = "GOCSPXabcdefghij12345678901234"'},
+  {id:"google_oauth_tp_002",ph:"GOOGLE_OAUTH",cat:"secret",ok:true,n:1,
+   desc:"client_secret: '…' in YAML",
+   text:"client_secret: 'ABCDEFabcdef1234567890MNOPQR'"},
+];
+
+// ── Runner ────────────────────────────────────────────────────────────────
+function run() {
+  return CASES.map(tc => {
+    const t0 = performance.now();
+    const hits = detect(tc.text);
+    const us   = (performance.now() - t0) * 1000;
+
+    const typeHits = hits.filter(i => i.ph === tc.ph).length;
+    const pass = tc.ok ? typeHits >= (tc.n || 1) : typeHits === 0;
+    return { ...tc, typeHits, pass, us };
+  });
+}
+
+// ── Rendering helpers ─────────────────────────────────────────────────────
+function fmtUs(us) {
+  return us < 1000 ? `${us.toFixed(0)} µs` : `${(us/1000).toFixed(2)} ms`;
+}
+
+function render(rs) {
+  const total   = rs.length;
+  const passed  = rs.filter(r => r.pass).length;
+  const failed  = total - passed;
+  const acc     = (passed / total * 100).toFixed(1);
+  const times   = rs.map(r => r.us).sort((a,b)=>a-b);
+  const avg     = times.reduce((s,v)=>s+v,0) / times.length;
+  const med     = times[Math.floor(times.length/2)];
+  const mx      = times[times.length-1];
+
+  // ── Summary ──────────────────────────────────────────────────────────────
+  document.getElementById("summary-area").innerHTML = `
+<div class="summary">
+  <div class="s-cell"><div class="s-val">${total}</div><div class="s-lbl">Total tests</div></div>
+  <div class="s-cell"><div class="s-val c-pass">${passed}</div><div class="s-lbl">Passed ✓</div></div>
+  <div class="s-cell"><div class="s-val ${failed>0?"c-fail":"c-pass"}">${failed}</div><div class="s-lbl">Failed ✗</div></div>
+  <div class="s-cell"><div class="s-val ${+acc>=95?"c-pass":+acc>=75?"c-warn":"c-fail"}">${acc}%</div><div class="s-lbl">Accuracy</div></div>
+  <div class="s-cell"><div class="s-val">${fmtUs(avg)}</div><div class="s-lbl">Avg latency</div></div>
+  <div class="s-cell"><div class="s-val">${fmtUs(mx)}</div><div class="s-lbl">Max latency</div></div>
+</div>`;
+
+  // ── Per-type table ────────────────────────────────────────────────────────
+  const byPh = {};
+  for (const r of rs) {
+    if (!byPh[r.ph]) byPh[r.ph] = {cat:r.cat,total:0,pass:0,tp:0,fn:0,fp:0,tn:0};
+    const b = byPh[r.ph]; b.total++;
+    if (r.pass) b.pass++;
+    if (r.ok  &&  r.pass) b.tp++;
+    if (r.ok  && !r.pass) b.fn++;
+    if (!r.ok && !r.pass) b.fp++;
+    if (!r.ok &&  r.pass) b.tn++;
+  }
+
+  const rows = Object.entries(byPh).map(([ph,d]) => {
+    const recall = d.tp+d.fn>0 ? (d.tp/(d.tp+d.fn)*100).toFixed(0)+"%" : "—";
+    const prec   = d.tp+d.fp>0 ? (d.tp/(d.tp+d.fp)*100).toFixed(0)+"%" : "—";
+    const a      = d.pass/d.total*100;
+    const bc     = a>=95?"":" warn";
+    const ac     = a>=95?"c-pass":a>=75?"c-warn":"c-fail";
+    return `<tr>
+      <td class="t-ph">${ph}</td>
+      <td><span class="cat-tag ${d.cat}">${d.cat}</span></td>
+      <td>${d.total}</td>
+      <td class="c-pass">${d.pass}</td>
+      <td class="${d.pass<d.total?"c-fail":""}">${d.total-d.pass}</td>
+      <td>${recall}</td>
+      <td>${prec}</td>
+      <td><div class="bar-wrap">
+        <div class="bar-bg"><div class="bar-fill${bc}" style="width:${a}%"></div></div>
+        <span class="acc ${ac}">${a.toFixed(0)}%</span>
+      </div></td>
+    </tr>`;
+  }).join("");
+
+  // ── Case rows ─────────────────────────────────────────────────────────────
+  const caseRows = rs.map(r => {
+    const icon = r.pass ? "✓" : "✗";
+    const ic   = r.pass ? "c-pass" : "c-fail";
+    const exp  = r.ok ? `≥${r.n} ${r.ph}` : `0 ${r.ph}`;
+    const act  = r.typeHits > 0
+      ? `${r.typeHits} hallado${r.typeHits>1?"s":""}`
+      : "0 hallados";
+    const ac   = r.pass ? "ok" : "bad";
+    return `<div class="case-row">
+      <span class="ci ${ic}">${icon}</span>
+      <span class="cid">${r.id}</span>
+      <span class="cdesc">${r.desc}</span>
+      <span class="cexp">${exp}</span>
+      <span class="cact ${ac}">${act}</span>
+    </div>`;
+  }).join("");
+
+  document.getElementById("results-area").innerHTML = `
+<div class="section">
+  <div class="section-hd">Cobertura por tipo de patrón</div>
+  <table>
+    <thead><tr>
+      <th>Tipo</th><th>Cat.</th><th>Tests</th>
+      <th>✓</th><th>✗</th><th>Recall</th><th>Precisión</th><th>Cobertura</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="latency-row">
+    <div class="lat-cell"><div class="lat-v">${fmtUs(avg)}</div><div class="lat-l">Promedio</div></div>
+    <div class="lat-cell"><div class="lat-v">${fmtUs(med)}</div><div class="lat-l">Mediana</div></div>
+    <div class="lat-cell"><div class="lat-v">${fmtUs(mx)}</div><div class="lat-l">Máximo</div></div>
+    <div class="lat-cell"><div class="lat-v">${fmtUs(times[0])}</div><div class="lat-l">Mínimo</div></div>
+  </div>
+</div>
+<div class="case-list-hd">
+  <span></span><span>ID</span><span>Descripción</span>
+  <span style="text-align:center">Esperado</span>
+  <span style="text-align:center">Resultado</span>
+</div>
+${caseRows}`;
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────
+document.getElementById("run-btn").addEventListener("click", () => {
+  const btn = document.getElementById("run-btn");
+  btn.disabled = true; btn.textContent = "Ejecutando…";
+  document.getElementById("status-msg").textContent = `Procesando ${CASES.length} casos…`;
+  setTimeout(() => {
+    const rs = run();
+    render(rs);
+    const p = rs.filter(r=>r.pass).length;
+    btn.disabled = false; btn.textContent = "▶ Volver a ejecutar";
+    document.getElementById("status-msg").textContent =
+      `Completado — ${p}/${rs.length} tests pasados.`;
+  }, 16);
+});
+
+window.addEventListener("load", () => document.getElementById("run-btn").click());
+</script>
+</body>
+</html>

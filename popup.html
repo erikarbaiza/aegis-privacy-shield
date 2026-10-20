@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>AEGIS Privacy Shield</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{
+    width:300px;background:#F5F0E6;color:#1A1510;
+    font-family:'Courier New',Courier,monospace;font-size:12px;
+  }
+  .hdr{
+    background:#1A1510;color:#F5F0E6;
+    padding:12px 14px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .hdr-name{font-size:13px;font-weight:700;letter-spacing:.06em}
+  .hdr-tag{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7A7060;margin-top:2px}
+
+  .toggle-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border-bottom:1px solid #C8C0B0;
+  }
+  .toggle-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5A5040}
+  .toggle{position:relative;width:36px;height:20px;cursor:pointer}
+  .toggle input{opacity:0;width:0;height:0;position:absolute}
+  .slider{
+    position:absolute;inset:0;background:#C8C0B0;border-radius:10px;
+    transition:background .2s;
+  }
+  .slider::before{
+    content:'';position:absolute;width:14px;height:14px;border-radius:50%;
+    background:#fff;left:3px;top:3px;transition:transform .2s;
+  }
+  input:checked + .slider{background:#2D7A4A}
+  input:checked + .slider::before{transform:translateX(16px)}
+
+  /* ── Stats panel ── */
+  .stats{
+    padding:10px 14px;border-bottom:1px solid #C8C0B0;
+    background:#EDE8DA;
+  }
+  .stats-head{
+    font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#8A8070;margin-bottom:6px;
+  }
+  .stats-big{
+    font-size:22px;font-weight:700;color:#1A1510;line-height:1;
+  }
+  .stats-sub{font-size:9px;color:#8A8070;margin-top:2px}
+  .stats-types{
+    margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;
+  }
+  .chip{
+    font-size:9px;letter-spacing:.08em;padding:2px 6px;
+    border:1px solid #C8C0B0;color:#5A5040;background:#F5F0E6;
+  }
+  .chip.active{border-color:#2D7A4A;color:#2D7A4A;background:rgba(45,122,74,.08)}
+  .chip.secret{border-color:#B87030;color:#B87030}
+  .chip.secret.active{border-color:#C85020;color:#C85020;background:rgba(200,80,32,.08)}
+  .stats-empty{font-size:10px;color:#B0A898;margin-top:2px}
+
+  .cat-bar{
+    display:flex;gap:6px;margin-top:6px;
+  }
+  .cat-pill{
+    flex:1;padding:4px 6px;font-size:9px;letter-spacing:.06em;
+    text-transform:uppercase;text-align:center;
+  }
+  .cat-pill.pii{background:rgba(45,122,74,.08);border:1px solid rgba(45,122,74,.3);color:#2D7A4A}
+  .cat-pill.secret{background:rgba(200,80,32,.08);border:1px solid rgba(200,80,32,.3);color:#C85020}
+  .cat-pill span{display:block;font-size:13px;font-weight:700;letter-spacing:0}
+
+  .gdpr-btn{
+    margin-top:8px;width:100%;background:none;
+    border:1px solid #C8C0B0;color:#5A5040;cursor:pointer;
+    font-family:inherit;font-size:9px;padding:5px;
+    letter-spacing:.08em;text-transform:uppercase;
+  }
+  .gdpr-btn:hover{border-color:#1A1510;color:#1A1510}
+
+  .chip-group-label{
+    font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+    color:#B0A898;margin-top:6px;margin-bottom:2px;display:block;
+  }
+
+  /* ── Mode selector ── */
+  .mode-row{
+    padding:8px 14px 10px;border-bottom:1px solid #C8C0B0;
+    background:#EDE8DA;
+  }
+  .mode-label{
+    font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+    color:#8A8070;margin-bottom:6px;display:block;
+  }
+  .mode-btns{display:flex;gap:4px}
+  .mode-btn{
+    flex:1;font-family:inherit;font-size:9px;cursor:pointer;
+    padding:5px 4px;border:1px solid #C8C0B0;background:#F5F0E6;
+    color:#5A5040;letter-spacing:.04em;text-align:center;
+    transition:all .15s;
+  }
+  .mode-btn:hover{border-color:#8A8070;color:#1A1510}
+  .mode-btn.active[data-mode=safe]   {border-color:#2D7A4A;background:rgba(45,122,74,.10);color:#2D7A4A;font-weight:700}
+  .mode-btn.active[data-mode=balanced]{border-color:#B87030;background:rgba(184,112,48,.10);color:#B87030;font-weight:700}
+  .mode-btn.active[data-mode=strict]  {border-color:#C83030;background:rgba(200,48,48,.10);color:#C83030;font-weight:700}
+  .mode-btn.active[data-mode=silent]  {border-color:#5A5A8A;background:rgba(90,90,138,.10);color:#5A5A8A;font-weight:700}
+
+  /* ── Privacy score ── */
+  .score-row{
+    display:flex;align-items:center;gap:8px;margin-top:8px;
+    padding:6px 8px;background:#F5F0E6;border:1px solid #C8C0B0;
+  }
+  .score-ring{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;border:2px solid currentColor;
+  }
+  .score-ring.clean {color:#2D7A4A}
+  .score-ring.medium{color:#B87030}
+  .score-ring.high  {color:#C83030}
+  .score-details{flex:1;min-width:0}
+  .score-level{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .score-desc {font-size:8px;color:#8A8070;margin-top:1px;line-height:1.3}
+
+  /* ── Form ── */
+  .body{padding:14px}
+  label{
+    display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:#8A8070;margin-bottom:4px;margin-top:12px;
+  }
+  label:first-of-type{margin-top:0}
+  input[type=text],input[type=password]{
+    width:100%;border:1px solid #C8C0B0;background:#EDE8DA;
+    color:#1A1510;font-family:inherit;font-size:11px;
+    padding:6px 8px;outline:none;
+  }
+  input[type=text]:focus,input[type=password]:focus{border-color:#1A1510}
+  .hint{font-size:9px;color:#B0A898;margin-top:3px}
+
+  .key-wrap{position:relative}
+  .key-wrap input{padding-right:32px}
+  .eye{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    cursor:pointer;font-size:12px;color:#8A8070;background:none;border:none;
+    font-family:inherit;
+  }
+
+  .btn-row{margin-top:14px;display:flex;gap:8px}
+  button.primary{
+    flex:1;background:#1A1510;color:#F5F0E6;border:none;cursor:pointer;
+    font-family:inherit;font-size:11px;font-weight:700;padding:8px;
+    letter-spacing:.08em;text-transform:uppercase;
+  }
+  button.primary:hover{background:#2D2520}
+  button.secondary{
+    background:none;border:1px solid #C8C0B0;color:#5A5040;cursor:pointer;
+    font-family:inherit;font-size:11px;padding:8px 12px;
+    letter-spacing:.08em;text-transform:uppercase;
+  }
+  button.secondary:hover{border-color:#1A1510;color:#1A1510}
+
+  #status{
+    margin-top:10px;font-size:10px;padding:6px 8px;
+    display:none;letter-spacing:.04em;
+  }
+  #status.ok   {background:rgba(45,122,74,.12);color:#2D7A4A;border:1px solid rgba(45,122,74,.3)}
+  #status.error{background:rgba(200,48,48,.12);color:#C83030;border:1px solid rgba(200,48,48,.3)}
+  #status.info {background:rgba(90,138,223,.12);color:#2A5CB8;border:1px solid rgba(90,138,223,.3)}
+
+  /* ── Explain View ── */
+  .explain-section{border-top:1px solid #C8C0B0;background:#EDE8DA}
+  .explain-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 14px 6px;cursor:pointer;user-select:none;
+  }
+  .explain-head-label{
+    font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8A8070;
+  }
+  .explain-head-right{display:flex;align-items:center;gap:6px}
+  .explain-head-meta{font-size:9px;color:#B0A898}
+  .explain-caret{font-size:9px;color:#B0A898;transition:transform .2s;display:inline-block}
+  .explain-caret.open{transform:rotate(180deg)}
+  .explain-body{padding-bottom:6px}
+  .explain-card{
+    padding:6px 14px 5px;border-top:1px solid #D8D0C0;
+  }
+  .explain-row1{
+    display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1px;
+  }
+  .explain-ph{
+    font-size:10px;font-weight:700;
+    font-family:'Courier New',Courier,monospace;letter-spacing:.04em;
+  }
+  .explain-ph.pii   {color:#2D7A4A}
+  .explain-ph.secret{color:#C85020}
+  .explain-token{
+    font-size:8px;color:#8A8070;
+    font-family:'Courier New',Courier,monospace;
+  }
+  .explain-why{font-size:10px;color:#3A3028;margin-bottom:3px;line-height:1.3}
+  .explain-footer{
+    font-size:8px;color:#B0A898;display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  }
+  .explain-badge{
+    font-size:8px;padding:1px 4px;letter-spacing:.05em;
+    border:1px solid currentColor;text-transform:uppercase;
+  }
+  .explain-badge.pii   {color:#2D7A4A}
+  .explain-badge.secret{color:#C85020}
+
+  .footer{
+    padding:8px 14px;border-top:1px solid #C8C0B0;
+    font-size:9px;color:#B0A898;letter-spacing:.06em;
+    display:flex;justify-content:space-between;
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-name">AEGIS</div>
+    <div class="hdr-tag">Privacy Shield</div>
+  </div>
+  <div id="hdr-status" style="width:8px;height:8px;border-radius:50%;background:#5A5040"></div>
+</div>
+
+<div class="toggle-row">
+  <span class="toggle-label">Protección activa</span>
+  <label class="toggle">
+    <input type="checkbox" id="enabled" checked>
+    <span class="slider"></span>
+  </label>
+</div>
+<div class="toggle-row" id="allowlist-row" style="display:none;border-top:none;background:#F0EBE0">
+  <span class="toggle-label" style="color:#8A8070;font-size:9px">Confiar en <strong id="allowlist-site" style="color:#5A5040">este sitio</strong></span>
+  <label class="toggle">
+    <input type="checkbox" id="allowlist-chk">
+    <span class="slider"></span>
+  </label>
+</div>
+
+<!-- Mode selector -->
+<div class="mode-row">
+  <span class="mode-label">Modo de protección</span>
+  <div class="mode-btns">
+    <button class="mode-btn" data-mode="safe" title="Solo detecta credenciales y secretos">🟢 Seguro</button>
+    <button class="mode-btn active" data-mode="balanced" title="Detecta PII y credenciales (recomendado)">🟡 Equilibrado</button>
+    <button class="mode-btn" data-mode="strict" title="Todo + confirmación antes de enviar">🔴 Estricto</button>
+    <button class="mode-btn" data-mode="silent" title="Protege en silencio sin alertas visuales">⚫ Silencioso</button>
+  </div>
+</div>
+
+<!-- Audit stats -->
+<div class="stats">
+  <div class="stats-head">Protección hoy</div>
+  <div id="stats-loading" class="stats-empty">Cargando…</div>
+  <div id="stats-content" style="display:none">
+    <div class="stats-big" id="stats-count">0</div>
+    <div class="stats-sub" id="stats-sub">datos protegidos hoy</div>
+    <div class="cat-bar" id="cat-bar" style="display:none">
+      <div class="cat-pill pii" id="cat-pii"><span id="cat-pii-n">0</span>PII</div>
+      <div class="cat-pill secret" id="cat-secret"><span id="cat-secret-n">0</span>Secretos</div>
+    </div>
+    <span class="chip-group-label" id="chips-pii-label" style="display:none">Datos personales</span>
+    <div class="stats-types" id="stats-types-pii"></div>
+    <span class="chip-group-label" id="chips-secret-label" style="display:none">Credenciales</span>
+    <div class="stats-types" id="stats-types-secret"></div>
+    <!-- Lifetime metrics -->
+    <div id="lifetime-section" style="display:none;margin-top:8px">
+      <span class="chip-group-label">Todo el tiempo</span>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px">
+        <div style="text-align:center;padding:5px 4px;border:1px solid #C8C0B0;background:#F5F0E6">
+          <div style="font-size:15px;font-weight:700;color:#1A1510" id="lt-prompts">0</div>
+          <div style="font-size:8px;color:#B0A898;letter-spacing:.06em;text-transform:uppercase;margin-top:1px">Prompts</div>
+        </div>
+        <div style="text-align:center;padding:5px 4px;border:1px solid #C8C0B0;background:#F5F0E6">
+          <div style="font-size:15px;font-weight:700;color:#2D7A4A" id="lt-pii">0</div>
+          <div style="font-size:8px;color:#B0A898;letter-spacing:.06em;text-transform:uppercase;margin-top:1px">PII</div>
+        </div>
+        <div style="text-align:center;padding:5px 4px;border:1px solid #C8C0B0;background:#F5F0E6">
+          <div style="font-size:15px;font-weight:700;color:#C85020" id="lt-sec">0</div>
+          <div style="font-size:8px;color:#B0A898;letter-spacing:.06em;text-transform:uppercase;margin-top:1px">Secretos</div>
+        </div>
+      </div>
+      <div style="font-size:8px;color:#B0A898;text-align:right;letter-spacing:.04em" id="lt-site"></div>
+    </div>
+
+    <div class="score-row" id="score-row" style="display:none">
+      <div class="score-ring" id="score-ring">—</div>
+      <div class="score-details">
+        <div class="score-level" id="score-level">Calculando…</div>
+        <div class="score-desc" id="score-desc"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="gdpr-btn" id="gdpr-btn" style="margin-top:0;flex:1">Exportar GDPR</button>
+      <button class="gdpr-btn" id="csv-btn" style="margin-top:0;flex:1">Exportar CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- Explain View -->
+<div class="explain-section" id="explain-section" style="display:none">
+  <div class="explain-head" id="explain-toggle">
+    <span class="explain-head-label">Último análisis</span>
+    <div class="explain-head-right">
+      <span class="explain-head-meta" id="explain-meta"></span>
+      <span class="explain-caret" id="explain-caret">▾</span>
+    </div>
+  </div>
+  <div class="explain-body" id="explain-body">
+    <div id="explain-list"></div>
+  </div>
+</div>
+
+<div class="body">
+  <label for="url">Servidor AEGIS <span style="color:#B0A898;font-size:8px">(opcional — amplía detección)</span></label>
+  <input type="text" id="url" placeholder="http://localhost:3000" autocomplete="off">
+  <div class="hint" id="url-hint" style="display:none">
+    Sin servidor activo — protección básica (email, IBAN, tarjeta, teléfono, DNI) funcionando.
+  </div>
+
+  <label for="key">Clave API (sk-aegis-…)</label>
+  <div class="key-wrap">
+    <input type="password" id="key" placeholder="sk-aegis-…" autocomplete="off">
+    <button class="eye" id="eye-btn" title="Mostrar/ocultar">👁</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary" id="save-btn">Guardar</button>
+    <button class="secondary" id="test-btn">Probar</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<div class="footer">
+  <span>AEGIS Neural v1.5</span>
+  <span id="sites-count">6 tipos PII · 13 secretos · 19 patrones</span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
