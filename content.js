@@ -1,6 +1,6 @@
 // AEGIS Content Script
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// State
 let pendingSession = null;
 let skipNext = false;
 let badge = null;
@@ -14,7 +14,7 @@ chrome.storage.onChanged.addListener(changes => {
   if (changes.aegisMode) aegisModeCache = changes.aegisMode.newValue || "balanced";
 });
 
-// ── Bridge: fetch-interceptor (MAIN world) ↔ service worker ──────────────────
+// Bridge: fetch-interceptor (MAIN world) ↔ service worker
 window.addEventListener("aegis-sanitize-request", async (e) => {
   const { id, text } = e.detail;
   try {
@@ -31,7 +31,7 @@ window.addEventListener("aegis-badge", (e) => {
   if (count > 0) showBadge(`${count} dato${count !== 1 ? "s" : ""} protegido${count !== 1 ? "s" : ""}`, "ok");
 });
 
-// ── Site config ───────────────────────────────────────────────────────────────
+// Site config
 const SITES = {
   "chatgpt.com": {
     inputSel:    ["#prompt-textarea", "textarea[name='prompt']", "#mobile-composer-prompt"],
@@ -133,7 +133,7 @@ if (cfg) {
   });
 }
 
-// ── DOM setup ─────────────────────────────────────────────────────────────────
+// DOM setup
 function initDom() {
   let pre = null;
   let preKey = null;
@@ -158,7 +158,7 @@ function initDom() {
 
   function applyPre(text) {
     if (!pre || pre.original !== text) {
-      // No cached result yet — emergency path:
+      // No cached result yet - emergency path:
       // Tell the fetch/XHR interceptor to hold the outgoing request for up to 400ms
       // while we fire an urgent SANITIZE. Local regex detection takes ~2-5ms so this
       // covers the race where the user clicks before the prefetch debounce fires.
@@ -211,7 +211,7 @@ function initDom() {
     preKey = null;
   }
 
-  // Set up input watcher + Enter key handler — runs independently of the submit button.
+  // Set up input watcher + Enter key handler - runs independently of the submit button.
   function trySetupInput() {
     const el = find(cfg.inputSel);
     if (!el || el._aegisInput) return;
@@ -297,7 +297,7 @@ function getText(el) {
   return (cfg.editable && !isField ? el.innerText || el.textContent || "" : el.value || "").trim();
 }
 
-// ── Watch AI response and rehydrate tokens ────────────────────────────────────
+// Watch AI response and rehydrate tokens
 function watchResponse() {
   if (responseObserver) responseObserver.disconnect();
 
@@ -316,7 +316,7 @@ async function tryRehydrate() {
   const inputEl = find(cfg.inputSel);
   const PATTERN = /\[[A-Z][A-Z_]*_\d+\]/;
 
-  // Universal: walk ALL text nodes in the page — no CSS selectors that break with UI updates.
+  // Universal: walk ALL text nodes in the page - no CSS selectors that break with UI updates.
   // Skip only the active input element so we don't touch what the user is still typing.
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -349,7 +349,7 @@ async function tryRehydrate() {
   }
 }
 
-// ── Output scanner: detect PII in the AI's response ──────────────────────────
+// Output scanner: detect PII in the AI's response
 async function scanOutputForPII() {
   if (!cfg?.responseSel) return;
 
@@ -384,7 +384,7 @@ async function scanOutputForPII() {
   } catch (_) {}
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 function find(selectors) {
   for (const s of selectors) {
     const el = document.querySelector(s);
@@ -402,7 +402,7 @@ function bg(type, data) {
   );
 }
 
-// ── Badge UI ──────────────────────────────────────────────────────────────────
+// Badge UI
 const COLORS = {
   loading: { fg: "#C89030", bg: "rgba(200,144,48,0.12)" },
   ok:      { fg: "#2D7A4A", bg: "rgba(45,122,74,0.12)"  },
@@ -435,7 +435,7 @@ function hideBadge() {
   if (badge) badge.style.opacity = "0";
 }
 
-// ── Strict-mode blocking overlay ──────────────────────────────────────────────
+// Strict-mode blocking overlay
 function showBlockOverlay(interceptions) {
   return new Promise(resolve => {
     const hasCritical = interceptions.some(i => i.cat === "secret");
@@ -510,7 +510,7 @@ async function handleStrictMode(submitEl, text) {
   const r = await bg("SANITIZE", { text });
 
   if (!r || r.error || !r.interceptions?.length) {
-    // Nothing to protect — let it through
+    // Nothing to protect - let it through
     skipNext = true;
     submitEl?.click();
     return;

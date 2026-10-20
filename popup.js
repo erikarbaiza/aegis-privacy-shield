@@ -26,7 +26,7 @@ const SECRET_TYPES = {
   GOOGLE_OAUTH:   "Google OAuth",
 };
 
-// ── Allowlist — confiar en el sitio actual ────────────────────────────────────
+// Allowlist - confiar en el sitio actual
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   try {
     const tab = tabs?.[0];
@@ -52,7 +52,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   } catch (_) {}
 });
 
-// ── Load saved config ──────────────────────────────────────────────────────────
+// Load saved config
 chrome.storage.sync.get(["aegisUrl", "aegisKey", "enabled", "aegisMode"], ({ aegisUrl, aegisKey, enabled, aegisMode }) => {
   if (aegisUrl) {
     $("url").value = aegisUrl;
@@ -67,7 +67,7 @@ chrome.storage.sync.get(["aegisUrl", "aegisKey", "enabled", "aegisMode"], ({ aeg
   setActiveMode(aegisMode || "balanced");
 });
 
-// ── Mode buttons ───────────────────────────────────────────────────────────────
+// Mode buttons
 function setActiveMode(mode) {
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
@@ -82,7 +82,7 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
   });
 });
 
-// ── Load audit stats ───────────────────────────────────────────────────────────
+// Load audit stats
 let cachedStats = null;
 
 chrome.runtime.sendMessage({ type: "GET_STATS" }, (stats) => {
@@ -238,12 +238,12 @@ function getWhy(ph) {
   return why[ph] || ph;
 }
 
-// ── URL input: show/hide hint ──────────────────────────────────────────────────
+// URL input: show/hide hint
 $("url").addEventListener("input", () => {
   $("url-hint").style.display = $("url").value.trim() ? "none" : "block";
 });
 
-// ── Show/hide API key ──────────────────────────────────────────────────────────
+// Show/hide API key
 $("eye-btn").addEventListener("click", () => {
   const inp = $("key");
   const visible = inp.type === "text";
@@ -251,14 +251,14 @@ $("eye-btn").addEventListener("click", () => {
   $("eye-btn").textContent = visible ? "👁" : "🙈";
 });
 
-// ── Toggle enabled ─────────────────────────────────────────────────────────────
+// Toggle enabled
 $("enabled").addEventListener("change", () => {
   const on = $("enabled").checked;
   chrome.storage.sync.set({ enabled: on });
   $("hdr-status").style.background = on ? "#2D7A4A" : "#5A5040";
 });
 
-// ── Save ───────────────────────────────────────────────────────────────────────
+// Save
 $("save-btn").addEventListener("click", () => {
   const url = $("url").value.trim().replace(/\/$/, "");
   const key = $("key").value.trim();
@@ -267,7 +267,7 @@ $("save-btn").addEventListener("click", () => {
   });
 });
 
-// ── Test connection ────────────────────────────────────────────────────────────
+// Test connection
 $("test-btn").addEventListener("click", () => {
   const url = $("url").value.trim().replace(/\/$/, "");
   const key = $("key").value.trim();
@@ -289,7 +289,7 @@ $("test-btn").addEventListener("click", () => {
   });
 });
 
-// ── GDPR export ────────────────────────────────────────────────────────────────
+// GDPR export
 const PROVIDER_MAP = {
   "chatgpt.com":           "OpenAI (ChatGPT)",
   "chat.openai.com":       "OpenAI (ChatGPT)",
@@ -386,7 +386,7 @@ $("gdpr-btn").addEventListener("click", () => {
   });
 });
 
-// ── Explain View ───────────────────────────────────────────────────────────────
+// Explain View
 chrome.storage.local.get(["lastExplain"], ({ lastExplain }) => {
   if (lastExplain?.items?.length) renderExplainView(lastExplain);
 });
@@ -431,7 +431,7 @@ function renderExplainView(explain) {
   $("explain-caret").classList.add("open");
 }
 
-// ── CSV export ─────────────────────────────────────────────────────────────────
+// CSV export
 $("csv-btn").addEventListener("click", () => {
   chrome.storage.local.get(["auditLog"], ({ auditLog = [] }) => {
     if (!auditLog.length) { showStatus("Sin datos para exportar", "info"); return; }
@@ -452,7 +452,7 @@ $("csv-btn").addEventListener("click", () => {
   });
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// Helpers
 function showStatus(msg, type) {
   const el = $("status");
   el.textContent   = msg;

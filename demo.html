@@ -15,17 +15,17 @@
 }
 body{font-family:'Courier New',Courier,monospace;background:var(--bg);color:var(--text);font-size:12px;min-height:100vh}
 
-/* ── Header ── */
+/* Header */
 .hdr{background:var(--ink);color:#F5F0E6;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
 .hdr-brand{font-size:14px;font-weight:700;letter-spacing:.06em}
 .hdr-sub{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#5A5040;margin-top:2px}
 .hdr-pill{font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border:1px solid #3A3025;color:#5A5040}
 
-/* ── Main ── */
+/* Main */
 .main{max-width:980px;margin:0 auto;padding:24px 16px 40px}
 .intro{font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.6;max-width:620px}
 
-/* ── Examples ── */
+/* Examples */
 .ex-label{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;display:block}
 .examples{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:20px}
 .ex-btn{
@@ -39,11 +39,11 @@ body{font-family:'Courier New',Courier,monospace;background:var(--bg);color:var(
 .ex-btn.sec{border-color:var(--sec-border);color:var(--sec)}
 .ex-btn.sec:hover{background:var(--sec-bg)}
 
-/* ── Grid ── */
+/* Grid */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:700px){.grid{grid-template-columns:1fr}}
 
-/* ── Panel ── */
+/* Panel */
 .panel{border:1px solid var(--border)}
 .panel-head{
   background:var(--bg2);border-bottom:1px solid var(--border);
@@ -58,25 +58,25 @@ textarea{
 }
 textarea::placeholder{color:var(--faint)}
 
-/* ── Output highlighted ── */
+/* Output highlighted */
 .output{height:190px;overflow-y:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;outline:none}
 mark.pii{background:var(--pii-bg);color:var(--pii);border-bottom:1.5px solid var(--pii);border-radius:1px;cursor:default}
 mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var(--sec);border-radius:1px;cursor:default}
 .empty{color:var(--faint);font-size:11px}
 
-/* ── Badge counter ── */
+/* Badge counter */
 .badge-count{
   font-size:9px;padding:2px 6px;display:none;
   background:var(--amber);color:#fff;letter-spacing:.04em;
 }
 .badge-count.on{display:inline}
 
-/* ── After (anonimizado) ── */
+/* After (anonimizado) */
 .after-text{height:190px;overflow-y:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--muted)}
 .token.pii{color:var(--pii);font-weight:700}
 .token.sec{color:var(--sec);font-weight:700}
 
-/* ── Detection list ── */
+/* Detection list */
 .det-section{margin-top:12px}
 .det-row{
   display:flex;align-items:baseline;gap:8px;padding:6px 10px;
@@ -93,13 +93,13 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
 .det-token.sec{color:var(--sec)}
 .det-why{font-size:9px;color:var(--faint);flex-basis:100%;padding-left:0;margin-top:1px}
 
-/* ── Clean message ── */
+/* Clean message */
 .clean-msg{
   padding:10px;font-size:10px;color:var(--pii);
   display:flex;align-items:center;gap:6px;
 }
 
-/* ── Stats strip ── */
+/* Stats strip */
 .stats-strip{
   display:flex;gap:16px;padding:10px 14px;
   background:var(--bg2);border:1px solid var(--border);
@@ -112,7 +112,7 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
 .stat-l{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:2px}
 .stat-div{width:1px;background:var(--border);align-self:stretch}
 
-/* ── Footer ── */
+/* Footer */
 .footer{
   border-top:1px solid var(--border);padding:12px 16px;
   font-size:9px;color:var(--faint);letter-spacing:.04em;
@@ -223,7 +223,7 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
 </div>
 
 <script>
-// ── Patterns (same as service-worker.js) ─────────────────────────────────────
+// Patterns (same as service-worker.js)
 const PATTERNS = [
   { cat:"pii", ph:"EMAIL_ADDRESS", why:"Dirección de correo electrónico",
     src:/\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g },
@@ -305,7 +305,7 @@ const PATTERNS = [
     src:/\bclient_secret\s*[:=]\s*["']?([A-Za-z0-9\-_]{20,})["']?/gi },
 ];
 
-// ── Detection ─────────────────────────────────────────────────────────────────
+// Detection
 function detect(text){
   const results=[];
   const seen=new Set();
@@ -342,7 +342,7 @@ function buildSanitized(text,results){
   return{sanitized:out,map};
 }
 
-// ── HTML helpers ─────────────────────────────────────────────────────────────
+// HTML helpers
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
 function renderHighlighted(text,results){
@@ -399,7 +399,7 @@ function renderDetList(results){
   }).join("");
 }
 
-// ── Update loop ───────────────────────────────────────────────────────────────
+// Update loop
 const input=document.getElementById("input");
 const output=document.getElementById("output");
 const counter=document.getElementById("counter");

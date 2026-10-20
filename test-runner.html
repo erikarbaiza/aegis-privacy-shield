@@ -10,7 +10,7 @@ body{
   background:#F5F0E6;color:#1A1510;font-size:12px;min-height:100vh;
 }
 
-/* ── Header ─────────────────────────────────────────────────────── */
+/* Header */
 .hdr{
   background:#1A1510;color:#F5F0E6;padding:18px 32px;
   border-bottom:2px solid #2D7A4A;display:flex;align-items:baseline;gap:16px;
@@ -18,7 +18,7 @@ body{
 .hdr-title{font-size:16px;font-weight:700;letter-spacing:.08em}
 .hdr-sub{font-size:9px;color:#7A7060;letter-spacing:.14em;text-transform:uppercase}
 
-/* ── Controls ───────────────────────────────────────────────────── */
+/* Controls */
 .controls{
   padding:12px 32px;background:#EDE8DA;border-bottom:1px solid #C8C0B0;
   display:flex;gap:12px;align-items:center;
@@ -32,7 +32,7 @@ body{
 .run-btn:disabled{background:#5A5040;cursor:default}
 #status-msg{font-size:9px;color:#8A8070;letter-spacing:.04em}
 
-/* ── Summary grid ───────────────────────────────────────────────── */
+/* Summary grid */
 .summary{
   display:grid;grid-template-columns:repeat(6,1fr);
   border-bottom:1px solid #C8C0B0;
@@ -46,7 +46,7 @@ body{
 .s-lbl{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#8A8070;margin-top:3px}
 .c-pass{color:#2D7A4A} .c-fail{color:#C83030} .c-warn{color:#B87030}
 
-/* ── Type-coverage table ────────────────────────────────────────── */
+/* Type-coverage table */
 .section{padding:0 32px 20px}
 .section-hd{
   font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#8A8070;
@@ -74,7 +74,7 @@ tr:hover td{background:rgba(45,122,74,.04)}
 .bar-fill.warn{background:#B87030} .bar-fill.fail{background:#C83030}
 .acc{font-size:10px;font-weight:700;min-width:34px}
 
-/* ── Case list ──────────────────────────────────────────────────── */
+/* Case list */
 .case-list-hd{
   display:grid;grid-template-columns:18px 130px 1fr 80px 70px;gap:6px;
   padding:7px 32px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;
@@ -118,7 +118,7 @@ tr:hover td{background:rgba(45,122,74,.04)}
 <div id="results-area"></div>
 
 <script>
-// ── PATTERNS — identical copy of service-worker.js ────────────────────────
+// PATTERNS - identical copy of service-worker.js
 const PATTERNS = [
   {cat:"pii",type:"email_address",ph:"EMAIL_ADDRESS",
    why:"Dirección de correo electrónico",
@@ -227,7 +227,7 @@ const PATTERNS = [
    re:()=>/\bclient_secret\s*[:=]\s*["']?([A-Za-z0-9\-_]{20,})["']?/gi},
 ];
 
-// ── Detection (same algorithm as regexSanitize in service-worker.js) ──────
+// Detection (same algorithm as regexSanitize in service-worker.js)
 function detect(text) {
   const counters={}, entityMap={}, interceptions=[];
   for(const {cat,type,ph,re,validate,why} of PATTERNS){
@@ -247,9 +247,9 @@ function detect(text) {
   return interceptions;
 }
 
-// ── Test cases (mirrors datasets/pii.json + datasets/secrets.json) ────────
+// Test cases (mirrors datasets/pii.json + datasets/secrets.json)
 const CASES=[
-  // PII — EMAIL_ADDRESS
+  // PII - EMAIL_ADDRESS
   {id:"email_tp_001",ph:"EMAIL_ADDRESS",cat:"pii",ok:true,n:1,
    desc:"Standard email in sentence",
    text:"Please send your CV to hr@company.es before Friday."},
@@ -269,7 +269,7 @@ const CASES=[
    desc:"Orphan @ — social mention, not email",
    text:"Follow us @company on Twitter."},
 
-  // PII — IBAN
+  // PII - IBAN
   {id:"iban_tp_001",ph:"IBAN",cat:"pii",ok:true,n:1,
    desc:"Spanish IBAN ES91 (valid checksum)",
    text:"Número de cuenta: ES91 2100 0418 4502 0005 1332"},
@@ -286,7 +286,7 @@ const CASES=[
    desc:"Too short — only 4 chars after country code",
    text:"Model ES12 arrived today."},
 
-  // PII — CARD_NUMBER
+  // PII - CARD_NUMBER
   {id:"card_tp_001",ph:"CARD_NUMBER",cat:"pii",ok:true,n:1,
    desc:"Visa 4111 1111 1111 1111 (valid Luhn)",
    text:"Card ending in 1111: 4111 1111 1111 1111"},
@@ -303,7 +303,7 @@ const CASES=[
    desc:"Only 8 digits — below 13-digit minimum",
    text:"PIN: 1234 5678"},
 
-  // PII — PHONE_NUMBER
+  // PII - PHONE_NUMBER
   {id:"phone_tp_001",ph:"PHONE_NUMBER",cat:"pii",ok:true,n:1,
    desc:"Spanish mobile +34 612 345 678",
    text:"Llámame al +34 612 345 678 esta tarde."},
@@ -317,7 +317,7 @@ const CASES=[
    desc:"PIN 4321 — only 4 digits, below 9-char minimum",
    text:"Access PIN: 4321"},
 
-  // PII — DNI
+  // PII - DNI
   {id:"dni_tp_001",ph:"DNI",cat:"pii",ok:true,n:1,
    desc:"12345678Z — valid DNI (Z is correct for 14 mod 23)",
    text:"DNI del paciente: 12345678Z"},
@@ -328,7 +328,7 @@ const CASES=[
    desc:"12345678A — wrong control letter, validation rejects",
    text:"ID: 12345678A (letra de control incorrecta)"},
 
-  // PII — IP_ADDRESS
+  // PII - IP_ADDRESS
   {id:"ip_tp_001",ph:"IP_ADDRESS",cat:"pii",ok:true,n:1,
    desc:"8.8.8.8 — public (Google DNS)",
    text:"Primary DNS resolver: 8.8.8.8"},
@@ -345,7 +345,7 @@ const CASES=[
    desc:"127.0.0.1 — loopback, excluded",
    text:"Dev server running at http://127.0.0.1:3000"},
 
-  // SECRETS — JWT
+  // SECRETS - JWT
   {id:"jwt_tp_001",ph:"JWT",cat:"secret",ok:true,n:1,
    desc:"Classic HS256 JWT (3-part Base64URL, 10+ chars each)",
    text:"const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';"},
@@ -353,7 +353,7 @@ const CASES=[
    desc:"Short Base64-like — only 2 parts, fails 3-part rule",
    text:"Hash: eyJhbGci.short"},
 
-  // SECRETS — OPENAI_KEY
+  // SECRETS - OPENAI_KEY
   {id:"openai_tp_001",ph:"OPENAI_KEY",cat:"secret",ok:true,n:1,
    desc:"Legacy sk-… key (43 chars after sk-)",
    text:"OPENAI_API_KEY=sk-1234567890abcdefghijklmnopqrstuvwxyzABCDE"},
@@ -364,7 +364,7 @@ const CASES=[
    desc:"sk- prefix but only 5 chars — below 40-char minimum",
    text:"Error: sk-short is not a valid key."},
 
-  // SECRETS — ANTHROPIC_KEY
+  // SECRETS - ANTHROPIC_KEY
   {id:"anthropic_tp_001",ph:"ANTHROPIC_KEY",cat:"secret",ok:true,n:1,
    desc:"sk-ant-api03-… key in .env",
    text:"ANTHROPIC_API_KEY=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTuvwxyz1234567890abc"},
@@ -372,7 +372,7 @@ const CASES=[
    desc:"sk-ant-api03-… key in TypeScript",
    text:"const claude = new Anthropic({ apiKey: 'sk-ant-api03-XYZabcdefghij1234567890MNOP' });"},
 
-  // SECRETS — GITHUB_TOKEN
+  // SECRETS - GITHUB_TOKEN
   {id:"github_tp_001",ph:"GITHUB_TOKEN",cat:"secret",ok:true,n:1,
    desc:"Classic PAT ghp_ prefix + 36 alphanumeric",
    text:"GH_TOKEN=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234"},
@@ -380,7 +380,7 @@ const CASES=[
    desc:"OAuth app token gho_ prefix + 36 alphanumeric",
    text:"Authorization: token gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234"},
 
-  // SECRETS — AWS_KEY
+  // SECRETS - AWS_KEY
   {id:"aws_tp_001",ph:"AWS_KEY",cat:"secret",ok:true,n:1,
    desc:"AKIA prefix + 16 uppercase alphanumeric",
    text:"AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"},
@@ -391,12 +391,12 @@ const CASES=[
    desc:"AKIA prefix but only 5 chars — below 16-char minimum",
    text:"Account: AKIA12345 (not a real key)"},
 
-  // SECRETS — GOOGLE_KEY
+  // SECRETS - GOOGLE_KEY
   {id:"google_key_tp_001",ph:"GOOGLE_KEY",cat:"secret",ok:true,n:1,
    desc:"AIza prefix + 35 chars",
    text:"GOOGLE_API_KEY=AIzaSyDummyKey1234567890123456789012345"},
 
-  // SECRETS — STRIPE_KEY
+  // SECRETS - STRIPE_KEY
   {id:"stripe_tp_001",ph:"STRIPE_KEY",cat:"secret",ok:true,n:1,
    desc:"Stripe secret test key (sk_test_…)",
    text:"STRIPE_SECRET_KEY=sk_test_4eC39HqLyjWDarjtT1zdp7dc123456"},
@@ -404,7 +404,7 @@ const CASES=[
    desc:"Stripe publishable live key (pk_live_…)",
    text:"const stripe = Stripe('pk_live_ABCDEFGHIJKLMNOPabcdefghij');"},
 
-  // SECRETS — PRIVATE_KEY
+  // SECRETS - PRIVATE_KEY
   {id:"private_key_tp_001",ph:"PRIVATE_KEY",cat:"secret",ok:true,n:1,
    desc:"RSA private key header",
    text:"Here is my key:\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA..."},
@@ -412,7 +412,7 @@ const CASES=[
    desc:"Generic PKCS8 private key header",
    text:"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC..."},
 
-  // SECRETS — BEARER_TOKEN
+  // SECRETS - BEARER_TOKEN
   {id:"bearer_tp_001",ph:"BEARER_TOKEN",cat:"secret",ok:true,n:1,
    desc:"Bearer token in Authorization header (curl)",
    text:"curl -H 'Authorization: Bearer eyABCDEFGHIJKLMNOPQRSTUVWXYZabc' https://api.example.com"},
@@ -420,7 +420,7 @@ const CASES=[
    desc:"Bearer token in Python requests dict",
    text:"headers = {'Authorization': 'Bearer abcdef1234567890abcdef1234567890'}"},
 
-  // SECRETS — PASSWORD
+  // SECRETS - PASSWORD
   {id:"password_tp_001",ph:"PASSWORD",cat:"secret",ok:true,n:1,
    desc:"password = \"…\" in Python (6+ char value)",
    text:'DB_PASSWORD = "s3cr3t_p4ssw0rd!"'},
@@ -434,7 +434,7 @@ const CASES=[
    desc:"pwd = 'abc' — value only 3 chars, below minimum",
    text:"pwd = 'abc'"},
 
-  // SECRETS — MONGODB_URI
+  // SECRETS - MONGODB_URI
   {id:"mongodb_tp_001",ph:"MONGODB_URI",cat:"secret",ok:true,n:1,
    desc:"Standard mongodb:// connection string",
    text:"MONGODB_URL=mongodb://admin:password@cluster.example.com:27017/mydb"},
@@ -442,7 +442,7 @@ const CASES=[
    desc:"Atlas SRV mongodb+srv:// URI",
    text:"mongoose.connect('mongodb+srv://user:pass@cluster.mongodb.net/app')"},
 
-  // SECRETS — SLACK_TOKEN
+  // SECRETS - SLACK_TOKEN
   {id:"slack_tp_001",ph:"SLACK_TOKEN",cat:"secret",ok:true,n:1,
    desc:"Bot token xoxb- + 10+ chars",
    text:"SLACK_BOT_TOKEN=xoxb-EJEMPLO-FALSO-ABCDEFabcdef12345"},
@@ -450,7 +450,7 @@ const CASES=[
    desc:"User token xoxp- + 10+ chars",
    text:"token = 'xoxp-EJEMPLO-FALSO-ZYXWVUzyxwvu0987'"},
 
-  // SECRETS — GOOGLE_OAUTH
+  // SECRETS - GOOGLE_OAUTH
   {id:"google_oauth_tp_001",ph:"GOOGLE_OAUTH",cat:"secret",ok:true,n:1,
    desc:"client_secret = \"…\" (20+ char value)",
    text:'client_secret = "GOCSPXabcdefghij12345678901234"'},
@@ -459,7 +459,7 @@ const CASES=[
    text:"client_secret: 'ABCDEFabcdef1234567890MNOPQR'"},
 ];
 
-// ── Runner ────────────────────────────────────────────────────────────────
+// Runner
 function run() {
   return CASES.map(tc => {
     const t0 = performance.now();
@@ -472,7 +472,7 @@ function run() {
   });
 }
 
-// ── Rendering helpers ─────────────────────────────────────────────────────
+// Rendering helpers
 function fmtUs(us) {
   return us < 1000 ? `${us.toFixed(0)} µs` : `${(us/1000).toFixed(2)} ms`;
 }
@@ -487,7 +487,7 @@ function render(rs) {
   const med     = times[Math.floor(times.length/2)];
   const mx      = times[times.length-1];
 
-  // ── Summary ──────────────────────────────────────────────────────────────
+  // Summary
   document.getElementById("summary-area").innerHTML = `
 <div class="summary">
   <div class="s-cell"><div class="s-val">${total}</div><div class="s-lbl">Total tests</div></div>
@@ -498,7 +498,7 @@ function render(rs) {
   <div class="s-cell"><div class="s-val">${fmtUs(mx)}</div><div class="s-lbl">Max latency</div></div>
 </div>`;
 
-  // ── Per-type table ────────────────────────────────────────────────────────
+  // Per-type table
   const byPh = {};
   for (const r of rs) {
     if (!byPh[r.ph]) byPh[r.ph] = {cat:r.cat,total:0,pass:0,tp:0,fn:0,fp:0,tn:0};
@@ -531,7 +531,7 @@ function render(rs) {
     </tr>`;
   }).join("");
 
-  // ── Case rows ─────────────────────────────────────────────────────────────
+  // Case rows
   const caseRows = rs.map(r => {
     const icon = r.pass ? "✓" : "✗";
     const ic   = r.pass ? "c-pass" : "c-fail";
@@ -574,7 +574,7 @@ function render(rs) {
 ${caseRows}`;
 }
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────
+// Bootstrap
 document.getElementById("run-btn").addEventListener("click", () => {
   const btn = document.getElementById("run-btn");
   btn.disabled = true; btn.textContent = "Ejecutando…";

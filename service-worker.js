@@ -1,5 +1,5 @@
 // AEGIS Service Worker
-// Architecture:  DETECTOR → POLICY ENGINE → LOGGER → EXPORTER
+// Architecture:  DETECTOR -> POLICY ENGINE -> LOGGER -> EXPORTER
 //
 //   DETECTOR     : PATTERNS, regexSanitize, checkSensitiveFiles
 //   POLICY ENGINE: mode filter, riskLevel, requireConfirm
@@ -23,7 +23,7 @@ async function getConfig() {
   );
 }
 
-// ── Local session store (in-memory, instant access) ────────────────────────
+// Local session store (in-memory, instant access)
 const _sessions = new Map(); // sessionId → entityMap
 
 function storeSession(entityMap) {
@@ -38,10 +38,10 @@ function loadSession(sessionToken) {
   return _sessions.get(sessionToken.slice(6)) ?? null;
 }
 
-// ── Local regex detector — instant, no server needed ──────────────────────
+// Local regex detector - instant, no server needed
 // cat: "pii" = datos personales / "secret" = credenciales y claves de API
 const PATTERNS = [
-  // ── PII ────────────────────────────────────────────────────────────────
+  // PII
   { cat: "pii", type: "email_address", ph: "EMAIL_ADDRESS",
     why: "Dirección de correo electrónico",
     re: () => /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g },
@@ -102,7 +102,7 @@ const PATTERNS = [
     },
   },
 
-  // ── Secrets & Credentials ───────────────────────────────────────────────
+  // Secrets & Credentials
   { cat: "secret", type: "jwt", ph: "JWT",
     why: "Token JWT — credenciales de sesión codificadas en Base64",
     re: () => /\beyJ[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}/g },
@@ -210,7 +210,7 @@ function regexSanitize(text, mode = "balanced") {
   return { sanitizedText: out, entityMap, interceptions };
 }
 
-// ── Audit trail ────────────────────────────────────────────────────────────────
+// Audit trail
 function storeAuditEvent(interceptions, meta = {}) {
   const entry = {
     ts:        Date.now(),
@@ -226,7 +226,7 @@ function storeAuditEvent(interceptions, meta = {}) {
   });
 }
 
-// ── Extension icon badge — shows today's detection count ──────────────────────
+// Extension icon badge - shows today's detection count
 function updateExtensionBadge() {
   chrome.storage.local.get(["auditLog"], ({ auditLog = [] }) => {
     const dayAgo = Date.now() - 86_400_000;
@@ -238,7 +238,7 @@ function updateExtensionBadge() {
 chrome.runtime.onInstalled.addListener(updateExtensionBadge);
 chrome.runtime.onStartup.addListener(updateExtensionBadge);
 
-// ── Explain data — stores last detection for popup Explain View ───────────
+// Explain data - stores last detection for popup Explain View
 const VALIDATED_PHS = new Set(["IBAN", "CARD_NUMBER", "DNI", "IP_ADDRESS"]);
 
 function storeExplainData(interceptions, meta = {}) {
@@ -259,11 +259,11 @@ function storeExplainData(interceptions, meta = {}) {
   });
 }
 
-// ── SANITIZE handler ───────────────────────────────────────────────────────
+// SANITIZE handler
 async function handleSanitize({ text, site }) {
   const { aegisUrl, aegisKey, aegisMode = "balanced" } = await getConfig();
 
-  // Fast local path — regex only, instant response
+  // Fast local path - regex only, instant response
   const local = regexSanitize(text, aegisMode);
   const sensitiveFiles = checkSensitiveFiles(text);
 
@@ -284,7 +284,7 @@ async function handleSanitize({ text, site }) {
     };
   }
 
-  // Slow path — call AEGIS server for LLM semantic detection (names, addresses, etc.)
+  // Slow path - call AEGIS server for LLM semantic detection (names, addresses, etc.)
   if (!aegisUrl || !aegisKey) {
     return { sanitizedText: text, interceptions: [], sessionToken: null, sensitiveFiles };
   }
@@ -310,7 +310,7 @@ async function handleSanitize({ text, site }) {
   }
 }
 
-// ── REHYDRATE handler ──────────────────────────────────────────────────────
+// REHYDRATE handler
 async function handleRehydrate({ text, sessionToken }) {
   // Fast local path
   const entityMap = loadSession(sessionToken);
@@ -322,7 +322,7 @@ async function handleRehydrate({ text, sessionToken }) {
     return { text: out };
   }
 
-  // Slow path — AEGIS server
+  // Slow path - AEGIS server
   const { aegisUrl, aegisKey } = await getConfig();
   if (!aegisUrl || !aegisKey) return { text };
 
@@ -335,7 +335,7 @@ async function handleRehydrate({ text, sessionToken }) {
   return res.json();
 }
 
-// ── GET_STATS handler ──────────────────────────────────────────────────────
+// GET_STATS handler
 async function handleGetStats() {
   return new Promise(resolve => {
     chrome.storage.local.get(["auditLog"], ({ auditLog = [] }) => {
@@ -378,7 +378,7 @@ async function handleGetStats() {
   });
 }
 
-// ── TEST_CONNECTION handler ────────────────────────────────────────────────
+// TEST_CONNECTION handler
 async function handleTest({ aegisUrl, aegisKey }) {
   try {
     const res = await fetch(`${aegisUrl.replace(/\/$/, "")}/api/health`, {

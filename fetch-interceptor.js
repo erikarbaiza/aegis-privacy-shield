@@ -1,6 +1,6 @@
-// Runs in MAIN world (page context) — intercepts fetch before the AI sends data.
+// Runs in MAIN world (page context) - intercepts fetch before the AI sends data.
 (function () {
-  // Pending mapping from content.js DOM intercept (original text → sanitized text)
+  // Pending mapping from content.js DOM intercept (original text -> sanitized text)
   let pending = null;
   window.addEventListener("aegis-mapping", (e) => {
     pending = e.detail;
@@ -34,7 +34,7 @@
               : input instanceof URL ? input.href
               : input?.url ?? "";
 
-    // Normalize method — init.method wins, then Request.method, default GET
+    // Normalize method - init.method wins, then Request.method, default GET
     const method = ((init?.method ?? input?.method) || "GET").toUpperCase();
     // Body can be in init.body OR on a Request object passed as `input`
     const hasInitBody = init?.body != null;
@@ -74,7 +74,7 @@
 
       if (bodyStr) {
 
-        // ── Strategy 1: raw swap using pre-tokenized mapping from content.js ──
+        // Strategy 1: raw swap using pre-tokenized mapping from content.js
         if (pending) {
           const orig  = pending.original;
           const san   = pending.sanitized;
@@ -91,7 +91,7 @@
             newBodyStr = bodyStr.split(plus).join(san.replace(/ /g, "+"));
           }
 
-          // ── Strategy 1b: per-entity swap ──────────────────────────────────
+          // Strategy 1b: per-entity swap
           // Fallback when the full message doesn't appear verbatim (e.g. Gemini's
           // batchexecute URL-encodes the body). Look for each individual PII value.
           if (!newBodyStr && pending.entityMap) {
@@ -122,7 +122,7 @@
           }
         }
 
-        // ── Strategy 2: parse JSON + on-the-fly AEGIS call ──
+        // Strategy 2: parse JSON + on-the-fly AEGIS call
         // Fallback when no aegis-mapping was dispatched yet (user clicked very fast).
         // Only runs for known JSON endpoints.
         if (matchesAI || matchesGemini) {
@@ -145,7 +145,7 @@
     return _fetch.apply(this, [input, init, ...rest]);
   };
 
-  // ── Body → string (handles all Fetch API body types) ─────────────────────
+  // Body -> string (handles all Fetch API body types)
   async function toStr(body) {
     if (body == null) return null;
     if (typeof body === "string") return body;
@@ -168,7 +168,7 @@
     return null;
   }
 
-  // ── URL detection ─────────────────────────────────────────────────────────
+  // URL detection
   function isAIUrl(url) {
     return (
       url.includes("/backend-api/") ||                      // ChatGPT
@@ -191,7 +191,7 @@
     );
   }
 
-  // ── Text extraction per service ──────────────────────────────────────────
+  // Text extraction per service
   const CHATGPT_CONV = /\/backend-(?:api|anon)\/(?:f\/)?conversation(?:\/prepare)?(?:[?#]|$)/;
 
   function extractText(url, body) {
@@ -218,7 +218,7 @@
     return body?.text ?? body?.message ?? body?.content ?? body?.input ?? body?.prompt ?? null;
   }
 
-  // ── Text replacement per service ─────────────────────────────────────────
+  // Text replacement per service
   function replaceText(url, body, newText) {
     if (CHATGPT_CONV.test(url)) {
       const msgs = body.messages.map((m, i, arr) =>
@@ -247,7 +247,7 @@
     return body;
   }
 
-  // ── Bridge: MAIN world → isolated world (for Strategy 2 AEGIS calls) ─────
+  // Bridge: MAIN world -> isolated world (for Strategy 2 AEGIS calls)
   function askAegis(text) {
     return new Promise((resolve) => {
       const id = "aegis-" + Math.random().toString(36).slice(2);
@@ -266,7 +266,7 @@
     });
   }
 
-  // ── XHR interception (Gemini sends messages via XHR, not window.fetch) ────
+  // XHR interception (Gemini sends messages via XHR, not window.fetch)
   // Overrides open() to capture the URL, then send() to swap PII before the
   // request leaves the browser. Shares `pending` with the fetch interceptor above.
   const _xhrOpen = XMLHttpRequest.prototype.open;
@@ -288,7 +288,7 @@
 
     // If content.js dispatched aegis-hold (emergency SANITIZE in flight), defer the
     // XHR until the mapping arrives. Re-enter send() after pending is set.
-    // Important: do NOT null pendingMappingPromise here — Gemini fires two XHRs
+    // Important: do NOT null pendingMappingPromise here - Gemini fires two XHRs
     // (batchexecute + StreamGenerate) back-to-back; both must register on the same
     // promise before it resolves, otherwise the second goes through unmodified.
     if (!pending && pendingMappingPromise) {
@@ -303,20 +303,20 @@
 
     // Gemini fires TWO XHR calls per message: batchexecute (saves history) then
     // StreamGenerate (generates the response). We must NOT consume `pending` after
-    // the first replacement — both calls need it. `pending` auto-expires after 10s.
+    // the first replacement - both calls need it. `pending` auto-expires after 10s.
     const count = pending?.interceptions?.length ?? 1;
 
-    // ── String body (URL-encoded form data — Gemini's batchexecute) ──────────
+    // String body (URL-encoded form data - Gemini's batchexecute)
     if (typeof body === "string" && pending) {
       const patched = xhrStringSwap(body, pending);
       if (patched) {
         window.dispatchEvent(new CustomEvent("aegis-badge", { detail: { count } }));
         return _xhrSend.apply(this, [patched]);
-        // pending intentionally NOT cleared — StreamGenerate fires right after
+        // pending intentionally NOT cleared - StreamGenerate fires right after
       }
     }
 
-    // ── Binary body (gRPC-web proto — Gemini's StreamGenerate) ───────────────
+    // Binary body (gRPC-web proto - Gemini's StreamGenerate)
     // Pads replacement with spaces to keep byte length identical so proto
     // varint length prefixes and gRPC frame headers stay valid.
     if (pending?.entityMap) {
@@ -328,11 +328,11 @@
         if (result) {
           window.dispatchEvent(new CustomEvent("aegis-badge", { detail: { count } }));
           return _xhrSend.apply(this, [result]);
-          // pending intentionally NOT cleared — may be more calls in the same sequence
+          // pending intentionally NOT cleared - may be more calls in the same sequence
         }
       }
 
-      // ── Blob body (async — defer send until decoded) ──────────────────────
+      // Blob body (async - defer send until decoded)
       if (body instanceof Blob) {
         const self  = this;
         const snap  = pending; // capture before any async gap
@@ -350,7 +350,7 @@
       }
     }
 
-    // ── XHR Strategy 2: self-contained detection ──────────────────────────────
+    // XHR Strategy 2: self-contained detection
     // Fires only when content.js didn't set `pending` (click/Enter handler missed).
     // Decodes the URL-encoded body, detects PII via the askAegis bridge, sets
     // `pending`, then re-enters send() so xhrStringSwap can do per-entity swap.
