@@ -319,18 +319,14 @@ $("gdpr-btn").addEventListener("click", () => {
 
       const report = {
         titulo:   "Informe de protección de privacidad — AEGIS Privacy Shield",
-        version:  "1.3.0",
+        version:  chrome.runtime.getManifest().version,
         generado: now.toISOString(),
 
         sesion_activa: {
           proveedor:    providerName,
           sitio:        tabHost || "desconocido",
           fecha:        today,
-          datos_enviados_al_proveedor: {
-            pii:      0,
-            secretos: 0,
-            nota:     "AEGIS interceptó y seudonimizó todos los datos detectados antes de transmitirlos. El proveedor nunca recibió datos reales.",
-          },
+          alcance_de_la_proteccion: "Los datos detectados fueron sustituidos por etiquetas antes del envío. Los datos no detectados (por ejemplo, nombres o direcciones) no están cubiertos.",
           proteccion_aplicada: "Seudonimización local con tokens efímeros (p.ej. [EMAIL_ADDRESS_1], [AWS_KEY_1])",
           modo_activo: stats.aegisMode || "equilibrado",
         },
@@ -365,7 +361,7 @@ $("gdpr-btn").addEventListener("click", () => {
             { articulo: "Art. 25",      descripcion: "Privacidad por diseño y por defecto — protección activa en el origen" },
             { articulo: "Art. 32",      descripcion: "Seguridad del tratamiento — seudonimización como medida técnica adecuada" },
           ],
-          garantia: "El responsable del tratamiento puede acreditar que ningún dato de categoría especial fue transmitido a terceros (proveedores de IA) sin seudonimización previa.",
+          nota: "Referencia orientativa. Este informe refleja lo que AEGIS detectó y sustituyó; no certifica cumplimiento del RGPD ni acredita que otros datos no detectados (nombres, direcciones) no se hayan transmitido.",
         },
 
         historial_anonimizado: auditLog.slice(0, 100).map(e => ({
