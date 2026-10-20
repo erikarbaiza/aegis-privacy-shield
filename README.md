@@ -2,7 +2,7 @@
 
 Extensión de navegador que evita que tus datos personales y tus claves lleguen a ChatGPT, Claude, Gemini o Copilot.
 
-Antes de que un mensaje salga de tu navegador, AEGIS cambia los datos sensibles por etiquetas (`[EMAIL_ADDRESS_1]`, `[DNI_1]`...). La IA solo ve las etiquetas. Cuando responde, AEGIS repone tus datos reales en tu pantalla, así que sigues recibiendo la respuesta completa.
+Antes de que un mensaje salga de tu navegador, AEGIS cambia los datos sensibles por etiquetas (`[EMAIL_ADDRESS_1]`, `[DNI_1]`...). La IA ve las etiquetas en lugar de los datos detectados. Cuando responde, AEGIS repone tus datos reales en tu pantalla, así que sigues recibiendo la respuesta completa.
 
 ```
 Tú escribes:      Mi DNI es 12345678Z y mi email erik@correo.com
@@ -26,7 +26,8 @@ Abre `demo.html` con doble clic. Es una página única, sin conexión ni depende
 
 ## Sitios protegidos
 
-chatgpt.com, claude.ai, gemini.google.com, copilot.microsoft.com, Gmail y Outlook Web.
+- **Probado:** chatgpt.com (en Edge).
+- **Preparado, sin verificar a fondo:** claude.ai, gemini.google.com, copilot.microsoft.com, Gmail y Outlook Web.
 
 ## Instalar (Chrome o Edge)
 
