@@ -128,7 +128,7 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
     <div class="hdr-brand">AEGIS Privacy Shield</div>
     <div class="hdr-sub">Demo interactiva — sin extensión, sin servidor, sin telemetría</div>
   </div>
-  <div class="hdr-pill">19 patrones · Local</div>
+  <div class="hdr-pill">20 patrones · Local</div>
 </div>
 
 <div class="main">
@@ -144,6 +144,9 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
     </button>
     <button class="ex-btn pii" data-text="Cuenta IBAN: ES91 2100 0418 4502 0005 1332. Tarjeta Visa: 4539 1488 0343 6467 (caduca 03/27).">
       IBAN + Tarjeta (Luhn)
+    </button>
+    <button class="ex-btn pii" data-text="Envíalo a Calle Mayor 5, 3º B, 48001 Bilbao. Mi otra dirección es Avenida de la Constitución 24 y el CP 28013.">
+      Dirección postal
     </button>
     <button class="ex-btn sec" data-text="sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890AbCdEfGhIjKlMnOpQrStUv-AAAAAAA">
       Anthropic API Key
@@ -219,10 +222,34 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
 
 <div class="footer">
   <span>AEGIS Privacy Shield · Detección 100% local · Sin conexión · Sin telemetría</span>
-  <span>19 patrones · PII + Secretos + Archivos sensibles</span>
+  <span>20 patrones · PII + Secretos + Archivos sensibles</span>
 </div>
 
 <script>
+// Direcciones (misma lógica que service-worker.js)
+const ADDR_STREET = "(?:calle|c\\/|cl\\.|avenida|avda\\.?|avd\\.?|av\\.|plaza|pza\\.?|pl\\.|paseo|pº|camino|carretera|ctra\\.?|travesía|travesia|trav\\.?|ronda|glorieta|bulevar|rúa)";
+const ADDR_TOKEN = "\\p{L}[\\p{L}'’.\\-]*";
+const ADDR_NUM = "(?:n[ºo°]\\.?\\s*|núm(?:ero)?\\.?\\s*|num(?:ero)?\\.?\\s*)?\\d{1,3}(?!\\d)";
+const ADDR_QTY = "(?!\\s*(?:veces|vez|euros|eur|€|años|minutos|min|horas|días|dias|personas|km|metros|%))";
+const ADDR_FLOOR = "(?:\\s*[,\\-]?\\s*(?:\\d{1,2}\\s?[ºª°]\\.?(?:\\s?[A-Za-z](?!\\p{L}))?|(?:bajo|entresuelo|ático|atico|izquierda|izq|derecha|dcha|dch)(?!\\p{L})\\.?))*";
+const ADDR_ZIP = "(?:0[1-9]|[1-4]\\d|5[0-2])\\d{3}(?!\\d)";
+const ADDR_RE =
+  `(?:(?<![\\p{L}\\p{N}])${ADDR_STREET}\\s+${ADDR_TOKEN}(?:\\s+${ADDR_TOKEN}){0,4}?\\s*,?\\s*${ADDR_NUM}${ADDR_QTY}${ADDR_FLOOR}(?:\\s*,?\\s*${ADDR_ZIP})?` +
+  `|(?<![\\p{L}\\p{N}])(?:c\\.?\\s?p\\.?|código\\s+postal)\\s*[:.]?\\s*${ADDR_ZIP})`;
+const ADDR_CONNECTORS = new Set(["de", "del", "la", "las", "los", "el", "y", "e"]);
+function validateAddress(s){
+  if(/^(?:c\.?\s?p|código)/i.test(s))return true;
+  const name=s.replace(/^\S+\s+/,"").split(/\d/)[0];
+  const tokens=name.split(/[\s,]+/).filter(t=>t&&!/^(?:n[ºo°]\.?|núm\.?|num\.?|número|numero)$/i.test(t));
+  let real=0;
+  for(const t of tokens){
+    if(ADDR_CONNECTORS.has(t))continue;
+    if(!/^\p{Lu}/u.test(t))return false;
+    real++;
+  }
+  return real>0;
+}
+
 // Patterns (same as service-worker.js)
 const PATTERNS = [
   { cat:"pii", ph:"EMAIL_ADDRESS", why:"Dirección de correo electrónico",
@@ -264,6 +291,10 @@ const PATTERNS = [
   { cat:"pii", ph:"IP_ADDRESS", why:"Dirección IPv4 pública",
     src:/\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
     validate(s){return !s.startsWith("127.")&&!s.startsWith("192.168.")&&!/^10\./.test(s)&&!/^172\.(1[6-9]|2\d|3[01])\./.test(s)&&s!=="0.0.0.0"&&!s.startsWith("255.")} },
+
+  { cat:"pii", ph:"ADDRESS", why:"Dirección postal (calle y número, o código postal). Detección aproximada",
+    src:new RegExp(ADDR_RE,"giu"),
+    validate:validateAddress },
 
   { cat:"secret", ph:"JWT", why:"Token JWT (credenciales de sesión en Base64)",
     src:/\beyJ[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}/g },

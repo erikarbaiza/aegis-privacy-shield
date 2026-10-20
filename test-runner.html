@@ -106,7 +106,7 @@ tr:hover td{background:rgba(45,122,74,.04)}
 
 <div class="hdr">
   <span class="hdr-title">AEGIS · Suite de Tests</span>
-  <span class="hdr-sub">v1.4 · 19 patrones · sin servidor · sin dependencias</span>
+  <span class="hdr-sub">v1.5 · 20 patrones · sin servidor · sin dependencias</span>
 </div>
 
 <div class="controls">
@@ -118,6 +118,30 @@ tr:hover td{background:rgba(45,122,74,.04)}
 <div id="results-area"></div>
 
 <script>
+// Direcciones (misma lógica que service-worker.js)
+const ADDR_STREET = "(?:calle|c\\/|cl\\.|avenida|avda\\.?|avd\\.?|av\\.|plaza|pza\\.?|pl\\.|paseo|pº|camino|carretera|ctra\\.?|travesía|travesia|trav\\.?|ronda|glorieta|bulevar|rúa)";
+const ADDR_TOKEN = "\\p{L}[\\p{L}'’.\\-]*";
+const ADDR_NUM = "(?:n[ºo°]\\.?\\s*|núm(?:ero)?\\.?\\s*|num(?:ero)?\\.?\\s*)?\\d{1,3}(?!\\d)";
+const ADDR_QTY = "(?!\\s*(?:veces|vez|euros|eur|€|años|minutos|min|horas|días|dias|personas|km|metros|%))";
+const ADDR_FLOOR = "(?:\\s*[,\\-]?\\s*(?:\\d{1,2}\\s?[ºª°]\\.?(?:\\s?[A-Za-z](?!\\p{L}))?|(?:bajo|entresuelo|ático|atico|izquierda|izq|derecha|dcha|dch)(?!\\p{L})\\.?))*";
+const ADDR_ZIP = "(?:0[1-9]|[1-4]\\d|5[0-2])\\d{3}(?!\\d)";
+const ADDR_RE =
+  `(?:(?<![\\p{L}\\p{N}])${ADDR_STREET}\\s+${ADDR_TOKEN}(?:\\s+${ADDR_TOKEN}){0,4}?\\s*,?\\s*${ADDR_NUM}${ADDR_QTY}${ADDR_FLOOR}(?:\\s*,?\\s*${ADDR_ZIP})?` +
+  `|(?<![\\p{L}\\p{N}])(?:c\\.?\\s?p\\.?|código\\s+postal)\\s*[:.]?\\s*${ADDR_ZIP})`;
+const ADDR_CONNECTORS = new Set(["de", "del", "la", "las", "los", "el", "y", "e"]);
+function validateAddress(s) {
+  if (/^(?:c\.?\s?p|código)/i.test(s)) return true;
+  const name = s.replace(/^\S+\s+/, "").split(/\d/)[0];
+  const tokens = name.split(/[\s,]+/).filter(t => t && !/^(?:n[ºo°]\.?|núm\.?|num\.?|número|numero)$/i.test(t));
+  let real = 0;
+  for (const t of tokens) {
+    if (ADDR_CONNECTORS.has(t)) continue;
+    if (!/^\p{Lu}/u.test(t)) return false;
+    real++;
+  }
+  return real > 0;
+}
+
 // PATTERNS - identical copy of service-worker.js
 const PATTERNS = [
   {cat:"pii",type:"email_address",ph:"EMAIL_ADDRESS",
@@ -173,6 +197,11 @@ const PATTERNS = [
             !/^10\./.test(s)&&!/^172\.(1[6-9]|2\d|3[01])\./.test(s)&&
             s!=="0.0.0.0"&&!s.startsWith("255.");
    }},
+
+  {cat:"pii",type:"address",ph:"ADDRESS",
+   why:"Dirección postal (calle y número, o código postal). Detección aproximada",
+   re:()=>new RegExp(ADDR_RE,"giu"),
+   validate:validateAddress},
 
   {cat:"secret",type:"jwt",ph:"JWT",
    why:"Token JWT — credenciales de sesión codificadas en Base64",
@@ -457,6 +486,56 @@ const CASES=[
   {id:"google_oauth_tp_002",ph:"GOOGLE_OAUTH",cat:"secret",ok:true,n:1,
    desc:"client_secret: '…' in YAML",
    text:"client_secret: 'ABCDEFabcdef1234567890MNOPQR'"},
+
+  // PII - ADDRESS
+  {id:"address_tp_001",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Calle + nombre + número + piso y puerta",
+   text:"Vivo en Calle Mayor 5, 3º B de Bilbao"},
+  {id:"address_tp_002",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Abreviatura C/ con nombre compuesto",
+   text:"Mi dirección: C/ Gran Vía de Colón 12"},
+  {id:"address_tp_003",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Avenida con nº y piso abreviado",
+   text:"Avenida de la Constitución, nº 24, 2º izq"},
+  {id:"address_tp_004",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Paseo con conectores",
+   text:"Paseo de la Castellana 100"},
+  {id:"address_tp_005",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Av. abreviada",
+   text:"Av. Gasteiz 25"},
+  {id:"address_tp_006",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Código postal con prefijo CP",
+   text:"CP 48001"},
+  {id:"address_tp_007",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Código postal con 'código postal:'",
+   text:"código postal: 28013"},
+  {id:"address_tp_008",ph:"ADDRESS",cat:"pii",ok:true,n:1,
+   desc:"Dirección con código postal a continuación",
+   text:"Calle Doctor Fleming 7, 2º A, 50003 Zaragoza"},
+  {id:"address_fp_001",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"'plaza' en minúsculas, sin nombre de vía",
+   text:"plaza para aparcar 30"},
+  {id:"address_fp_002",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"'plaza' en una frase normal",
+   text:"Tengo una plaza en el hotel 2"},
+  {id:"address_fp_003",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Número de 4 cifras (año), no portal",
+   text:"Camino de Santiago 2024"},
+  {id:"address_fp_004",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Fecha, no dirección",
+   text:"La Avenida 5 de mayo"},
+  {id:"address_fp_005",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Vía sin número",
+   text:"Quedamos en la Plaza Mayor"},
+  {id:"address_fp_006",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Cantidad ('3 veces'), no portal",
+   text:"Fui a la Plaza Mayor 3 veces"},
+  {id:"address_fp_007",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"Cifra de 5 dígitos que no es código postal",
+   text:"El precio es 48001 euros"},
+  {id:"address_fp_008",ph:"ADDRESS",cat:"pii",ok:false,n:0,
+   desc:"'ronda' de un torneo",
+   text:"ronda 2 del torneo"},
 ];
 
 // Runner

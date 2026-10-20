@@ -18,9 +18,10 @@ Abre `demo.html` con doble clic. Es una página única, sin conexión ni depende
 
 ## Qué detecta
 
-19 patrones, con validación algorítmica para evitar falsos positivos.
+20 patrones. Los datos con formato comprobable (IBAN, tarjeta, DNI/NIE) se validan con algoritmos para evitar falsos positivos.
 
-- **Datos personales (6):** email, IBAN (mod-97), tarjeta bancaria (Luhn), teléfono, DNI/NIE (letra de control), IPv4 pública.
+- **Datos personales (7):** email, IBAN (mod-97), tarjeta bancaria (Luhn), teléfono, DNI/NIE (letra de control), IPv4 pública y dirección postal.
+- **Direcciones (detección aproximada):** tipo de vía + nombre con mayúsculas + número (`Calle Mayor 5, 3º B`), o un código postal con prefijo (`CP 48001`). No detecta direcciones sin número ni escritas en minúsculas, y deja sin cambiar el nombre de la ciudad.
 - **Secretos (13):** claves de OpenAI, Anthropic, AWS, Google, Stripe y GitHub, tokens JWT, Bearer y Slack, claves privadas, contraseñas en código, cadenas de conexión MongoDB, client secrets de OAuth.
 - Avisa también si pegas nombres de archivos sensibles (`.env`, `id_rsa`, `credentials.json`...).
 
@@ -48,7 +49,7 @@ También puedes marcar sitios de confianza en los que AEGIS no actúa, ver un hi
 ## Límites conocidos
 
 - Depende de cómo está construida cada web. Si una IA cambia el diseño de su cuadro de texto, la extensión puede dejar de enganchar hasta que se actualicen los selectores en `content.js`. Ya pasó con ChatGPT.
-- La detección local no reconoce nombres propios ni direcciones. Para eso existe un modo opcional con servidor, que no se incluye en este repositorio.
+- La detección local no reconoce nombres propios. Las direcciones solo se detectan con el formato descrito arriba. Para una detección semántica existe un modo opcional con servidor, que no se incluye en este repositorio.
 - Está pensada como proyecto personal y no está publicada en la Chrome Web Store.
 
 ## Pruebas

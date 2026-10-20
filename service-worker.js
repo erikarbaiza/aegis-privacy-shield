@@ -38,6 +38,32 @@ function loadSession(sessionToken) {
   return _sessions.get(sessionToken.slice(6)) ?? null;
 }
 
+// Direcciones postales: tipo de vía + nombre + número (+ piso/puerta y código postal), o "CP 28013".
+// Heurística: exige nombre de vía con mayúsculas y número de 1 a 3 cifras para evitar falsos positivos.
+const ADDR_STREET = "(?:calle|c\\/|cl\\.|avenida|avda\\.?|avd\\.?|av\\.|plaza|pza\\.?|pl\\.|paseo|pº|camino|carretera|ctra\\.?|travesía|travesia|trav\\.?|ronda|glorieta|bulevar|rúa)";
+const ADDR_TOKEN = "\\p{L}[\\p{L}'’.\\-]*";
+const ADDR_NUM = "(?:n[ºo°]\\.?\\s*|núm(?:ero)?\\.?\\s*|num(?:ero)?\\.?\\s*)?\\d{1,3}(?!\\d)";
+const ADDR_QTY = "(?!\\s*(?:veces|vez|euros|eur|€|años|minutos|min|horas|días|dias|personas|km|metros|%))";
+const ADDR_FLOOR = "(?:\\s*[,\\-]?\\s*(?:\\d{1,2}\\s?[ºª°]\\.?(?:\\s?[A-Za-z](?!\\p{L}))?|(?:bajo|entresuelo|ático|atico|izquierda|izq|derecha|dcha|dch)(?!\\p{L})\\.?))*";
+const ADDR_ZIP = "(?:0[1-9]|[1-4]\\d|5[0-2])\\d{3}(?!\\d)";
+const ADDR_RE =
+  `(?:(?<![\\p{L}\\p{N}])${ADDR_STREET}\\s+${ADDR_TOKEN}(?:\\s+${ADDR_TOKEN}){0,4}?\\s*,?\\s*${ADDR_NUM}${ADDR_QTY}${ADDR_FLOOR}(?:\\s*,?\\s*${ADDR_ZIP})?` +
+  `|(?<![\\p{L}\\p{N}])(?:c\\.?\\s?p\\.?|código\\s+postal)\\s*[:.]?\\s*${ADDR_ZIP})`;
+const ADDR_CONNECTORS = new Set(["de", "del", "la", "las", "los", "el", "y", "e"]);
+
+function validateAddress(s) {
+  if (/^(?:c\.?\s?p|código)/i.test(s)) return true;
+  const name = s.replace(/^\S+\s+/, "").split(/\d/)[0];
+  const tokens = name.split(/[\s,]+/).filter(t => t && !/^(?:n[ºo°]\.?|núm\.?|num\.?|número|numero)$/i.test(t));
+  let real = 0;
+  for (const t of tokens) {
+    if (ADDR_CONNECTORS.has(t)) continue;
+    if (!/^\p{Lu}/u.test(t)) return false;
+    real++;
+  }
+  return real > 0;
+}
+
 // Local regex detector - instant, no server needed
 // cat: "pii" = datos personales / "secret" = credenciales y claves de API
 const PATTERNS = [
@@ -100,6 +126,12 @@ const PATTERNS = [
              !/^10\./.test(s) && !/^172\.(1[6-9]|2\d|3[01])\./.test(s) &&
              s !== "0.0.0.0" && !s.startsWith("255.");
     },
+  },
+
+  { cat: "pii", type: "address", ph: "ADDRESS",
+    why: "Dirección postal (calle y número, o código postal). Detección aproximada",
+    re: () => new RegExp(ADDR_RE, "giu"),
+    validate: validateAddress,
   },
 
   // Secrets & Credentials
@@ -170,9 +202,11 @@ function checkSensitiveFiles(text) {
 
 function regexSanitize(text, mode = "balanced") {
   // "safe" mode: only intercept credentials/secrets, not personal data
+  // Secretos primero: una clave entera no debe trocearse como si fuera un teléfono o un email
+  const secrets = PATTERNS.filter(p => p.cat === "secret");
   const activePatterns = mode === "safe"
-    ? PATTERNS.filter(p => p.cat === "secret")
-    : PATTERNS;
+    ? secrets
+    : [...secrets, ...PATTERNS.filter(p => p.cat !== "secret")];
 
   const counters = {};
   const entityMap = {};
@@ -240,6 +274,7 @@ chrome.runtime.onStartup.addListener(updateExtensionBadge);
 
 // Explain data - stores last detection for popup Explain View
 const VALIDATED_PHS = new Set(["IBAN", "CARD_NUMBER", "DNI", "IP_ADDRESS"]);
+const HEURISTIC_PHS = new Set(["ADDRESS"]);
 
 function storeExplainData(interceptions, meta = {}) {
   chrome.storage.local.set({
@@ -252,7 +287,7 @@ function storeExplainData(interceptions, meta = {}) {
         placeholder: i.placeholder,
         why:         i.why || i.ph,
         method:      "regex_local",
-        confidence:  VALIDATED_PHS.has(i.ph) ? "100%" : "99%",
+        confidence:  VALIDATED_PHS.has(i.ph) ? "100%" : HEURISTIC_PHS.has(i.ph) ? "aproximada" : "99%",
         action:      "anonimizado",
       })),
     },

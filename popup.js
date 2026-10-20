@@ -9,6 +9,7 @@ const PII_TYPES = {
   PHONE_NUMBER:  "Teléfono",
   DNI:           "DNI/NIE",
   IP_ADDRESS:    "IP pública",
+  ADDRESS:       "Dirección",
 };
 const SECRET_TYPES = {
   JWT:            "JWT",
@@ -221,6 +222,7 @@ function getWhy(ph) {
     PHONE_NUMBER:  "Número de teléfono",
     DNI:           "DNI o NIE español",
     IP_ADDRESS:    "IP pública que puede identificar al usuario",
+    ADDRESS:       "Dirección postal (calle y número, o código postal). Detección aproximada",
     JWT:           "Token JWT con credenciales de sesión",
     OPENAI_KEY:    "Clave de API de OpenAI",
     ANTHROPIC_KEY: "Clave de API de Anthropic",
@@ -272,7 +274,7 @@ $("test-btn").addEventListener("click", () => {
   const url = $("url").value.trim().replace(/\/$/, "");
   const key = $("key").value.trim();
   if (!url) {
-    showStatus("Protección básica activa (email, IBAN, tarjeta, teléfono, DNI, secretos). Añade un servidor para detección semántica.", "info");
+    showStatus("Protección básica activa (email, IBAN, tarjeta, teléfono, DNI, dirección, secretos). Añade un servidor para detección semántica.", "info");
     return;
   }
   if (!key) { showStatus("Introduce tu clave API para probar", "error"); return; }
@@ -350,7 +352,7 @@ $("gdpr-btn").addEventListener("click", () => {
         evidencia_tecnica: {
           mecanismo:  "Intercepción de fetch/XHR en MAIN world del navegador (document_start), antes de que la petición abandone el equipo del usuario.",
           validacion: "Algoritmos de validación: Luhn (tarjetas), módulo 97 (IBAN), tabla de caracteres (DNI/NIE).",
-          patrones:   19,
+          patrones:   20,
           categorias: ["PII", "Credenciales y secretos", "Archivos sensibles"],
         },
 
