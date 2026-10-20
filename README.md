@@ -26,8 +26,8 @@ Abre `demo.html` con doble clic. Es una página única, sin conexión ni depende
 
 ## Sitios protegidos
 
-- **Probado:** chatgpt.com (en Edge).
-- **Preparado, sin verificar a fondo:** claude.ai, gemini.google.com, copilot.microsoft.com, Gmail y Outlook Web.
+- **Probado (en Edge):** chatgpt.com, claude.ai y gemini.google.com.
+- **Preparado, sin verificar a fondo:** copilot.microsoft.com, Gmail y Outlook Web.
 
 ## Instalar (Chrome o Edge)
 
