@@ -175,7 +175,8 @@ const PATTERNS = [
 
   {cat:"pii",type:"phone_number",ph:"PHONE_NUMBER",
    why:"Número de teléfono",
-   re:()=>/(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g},
+   re:()=>/(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g,
+   validate:s=>!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(s.trim())},
 
   {cat:"pii",type:"dni_nie",ph:"DNI",
    why:"DNI o NIE español (letra de control válida)",
@@ -345,6 +346,12 @@ const CASES=[
   {id:"phone_fp_001",ph:"PHONE_NUMBER",cat:"pii",ok:false,n:0,
    desc:"PIN 4321 — only 4 digits, below 9-char minimum",
    text:"Access PIN: 4321"},
+  {id:"phone_fp_002",ph:"PHONE_NUMBER",cat:"pii",ok:false,n:0,
+   desc:"IP privada 192.168.1.20 no es un teléfono",
+   text:"El servidor local responde en 192.168.1.20 sin problemas."},
+  {id:"phone_fp_003",ph:"PHONE_NUMBER",cat:"pii",ok:false,n:0,
+   desc:"IP pública 84.120.45.201 se etiqueta como IP, no como teléfono",
+   text:"Acceso VPN desde la IP 84.120.45.201 de la oficina."},
 
   // PII - DNI
   {id:"dni_tp_001",ph:"DNI",cat:"pii",ok:true,n:1,

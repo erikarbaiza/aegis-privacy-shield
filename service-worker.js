@@ -103,7 +103,8 @@ const PATTERNS = [
 
   { cat: "pii", type: "phone_number", ph: "PHONE_NUMBER",
     why: "Número de teléfono",
-    re: () => /(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g },
+    re: () => /(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g,
+    validate: s => !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(s.trim()) },
 
   { cat: "pii", type: "dni_nie", ph: "DNI",
     why: "DNI o NIE español (letra de control válida)",
