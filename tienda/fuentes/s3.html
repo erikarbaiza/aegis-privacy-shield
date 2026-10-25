@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AEGIS Privacy Shield — Demo</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F0E6;--bg2:#EDE8DA;--border:#C8C0B0;
+  --text:#1A1510;--muted:#8A8070;--faint:#B0A898;
+  --pii:#2D7A4A;--pii-bg:rgba(45,122,74,.10);--pii-border:rgba(45,122,74,.35);
+  --sec:#C85020;--sec-bg:rgba(200,80,32,.10);--sec-border:rgba(200,80,32,.35);
+  --amber:#C89030;--ink:#1A1510;
+}
+body{font-family:'Courier New',Courier,monospace;background:var(--bg);color:var(--text);font-size:12px;min-height:100vh}
+
+/* Header */
+.hdr{background:var(--ink);color:#F5F0E6;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.hdr-brand{font-size:14px;font-weight:700;letter-spacing:.06em}
+.hdr-sub{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#5A5040;margin-top:2px}
+.hdr-pill{font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border:1px solid #3A3025;color:#5A5040}
+
+/* Main */
+.main{max-width:980px;margin:0 auto;padding:24px 16px 40px}
+.intro{font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.6;max-width:620px}
+
+/* Examples */
+.ex-label{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;display:block}
+.examples{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:20px}
+.ex-btn{
+  font-family:inherit;font-size:9px;letter-spacing:.04em;
+  padding:4px 10px;border:1px solid var(--border);background:none;
+  color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.ex-btn:hover{border-color:var(--text);color:var(--text)}
+.ex-btn.pii{border-color:var(--pii-border);color:var(--pii)}
+.ex-btn.pii:hover{background:var(--pii-bg)}
+.ex-btn.sec{border-color:var(--sec-border);color:var(--sec)}
+.ex-btn.sec:hover{background:var(--sec-bg)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+
+/* Panel */
+.panel{border:1px solid var(--border)}
+.panel-head{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:6px 10px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);display:flex;justify-content:space-between;align-items:center
+}
+.panel-body{padding:10px}
+textarea{
+  width:100%;height:190px;background:none;border:none;
+  font-family:inherit;font-size:12px;color:var(--text);
+  resize:vertical;outline:none;line-height:1.6;min-height:120px;
+}
+textarea::placeholder{color:var(--faint)}
+
+/* Output highlighted */
+.output{height:190px;overflow-y:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;outline:none}
+mark.pii{background:var(--pii-bg);color:var(--pii);border-bottom:1.5px solid var(--pii);border-radius:1px;cursor:default}
+mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var(--sec);border-radius:1px;cursor:default}
+.empty{color:var(--faint);font-size:11px}
+
+/* Badge counter */
+.badge-count{
+  font-size:9px;padding:2px 6px;display:none;
+  background:var(--amber);color:#fff;letter-spacing:.04em;
+}
+.badge-count.on{display:inline}
+
+/* After (anonimizado) */
+.after-text{height:190px;overflow-y:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--muted)}
+.token.pii{color:var(--pii);font-weight:700}
+.token.sec{color:var(--sec);font-weight:700}
+
+/* Detection list */
+.det-section{margin-top:12px}
+.det-row{
+  display:flex;align-items:baseline;gap:8px;padding:6px 10px;
+  border-bottom:1px solid var(--border);font-size:11px;
+}
+.det-row:last-child{border-bottom:none}
+.cat-tag{font-size:8px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;flex-shrink:0}
+.cat-tag.pii{background:var(--pii-bg);color:var(--pii);border:1px solid var(--pii-border)}
+.cat-tag.sec{background:var(--sec-bg);color:var(--sec);border:1px solid var(--sec-border)}
+.det-value{font-weight:700;word-break:break-all;flex:1;min-width:0}
+.det-arrow{color:var(--amber);flex-shrink:0;font-weight:700}
+.det-token{flex-shrink:0}
+.det-token.pii{color:var(--pii)}
+.det-token.sec{color:var(--sec)}
+.det-why{font-size:9px;color:var(--faint);flex-basis:100%;padding-left:0;margin-top:1px}
+
+/* Clean message */
+.clean-msg{
+  padding:10px;font-size:10px;color:var(--pii);
+  display:flex;align-items:center;gap:6px;
+}
+
+/* Stats strip */
+.stats-strip{
+  display:flex;gap:16px;padding:10px 14px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-top:none;margin-top:-1px;font-size:10px;
+}
+.stat{display:flex;flex-direction:column;align-items:center;min-width:60px}
+.stat-n{font-size:18px;font-weight:700;line-height:1}
+.stat-n.pii{color:var(--pii)}
+.stat-n.sec{color:var(--sec)}
+.stat-l{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+.stat-div{width:1px;background:var(--border);align-self:stretch}
+
+/* Footer */
+.footer{
+  border-top:1px solid var(--border);padding:12px 16px;
+  font-size:9px;color:var(--faint);letter-spacing:.04em;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;
+  max-width:980px;margin:0 auto;
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-brand">AEGIS Privacy Shield</div>
+    <div class="hdr-sub">Demo interactiva — sin extensión, sin servidor, sin telemetría</div>
+  </div>
+  <div class="hdr-pill">21 patrones · Local</div>
+</div>
+
+<div class="main">
+  <p class="intro">
+    Escribe o pega cualquier texto. AEGIS detecta datos personales y credenciales en tiempo real
+    usando los mismos patrones que la extensión — todo en tu navegador, sin salir de esta página.
+  </p>
+
+  <span class="ex-label">Ejemplos de prueba</span>
+  <div class="examples">
+    <button class="ex-btn pii" data-text="Hola, soy María López. Mi email es maria.lopez@empresa.com y mi teléfono +34 612 345 678. DNI: 12345678Z.">
+      Email + Teléfono + DNI
+    </button>
+    <button class="ex-btn pii" data-text="Cuenta IBAN: ES91 2100 0418 4502 0005 1332. Tarjeta Visa: 4539 1488 0343 6467 (caduca 03/27).">
+      IBAN + Tarjeta (Luhn)
+    </button>
+    <button class="ex-btn pii" data-text="Envíalo a Calle Mayor 5, 3º B, 48001 Bilbao. Mi otra dirección es Avenida de la Constitución 24 y el CP 28013.">
+      Dirección postal
+    </button>
+    <button class="ex-btn pii" data-text="Me llamo Lucía Fernández Ortega y mi DNI es 45612378C. Mi marido, Iñaki Etxeberria Sáenz (DNI 23456789D), es cotitular. Atendió la Dra. Marta Ibarra.">
+      Nombres por contexto
+    </button>
+    <button class="ex-btn sec" data-text="sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890AbCdEfGhIjKlMnOpQrStUv-AAAAAAA">
+      Anthropic API Key
+    </button>
+    <button class="ex-btn sec" data-text="mongodb+srv://admin:SuperSecret123@cluster0.mongodb.net/produccion?retryWrites=true&w=majority">
+      MongoDB URI
+    </button>
+    <button class="ex-btn sec" data-text="const password = 'miContraseña2024'\nconst db_pass = 'postgres_prod_pass'\nclient_secret=GOCSPX-abcdefghijklmnopqrstu">
+      Contraseña + OAuth
+    </button>
+    <button class="ex-btn sec" data-text="Token: xoxb-EJEMPLO-FALSO-AbCdEfGhIjKlMnOp\nAuthorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc123">
+      Slack + Bearer JWT
+    </button>
+  </div>
+
+  <div class="grid">
+    <!-- Input -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <span>Texto original</span>
+          <span class="badge-count" id="counter">0 detectados</span>
+        </div>
+        <div class="panel-body">
+          <textarea id="input" placeholder="Escribe aquí tu texto…&#10;&#10;O selecciona un ejemplo arriba →"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Highlighted output -->
+    <div>
+      <div class="panel">
+        <div class="panel-head"><span>Detectado (resaltado)</span></div>
+        <div class="panel-body">
+          <div class="output" id="output"><span class="empty">El análisis aparecerá aquí…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats strip (visible when data found) -->
+  <div class="stats-strip" id="stats-strip" style="display:none">
+    <div class="stat"><span class="stat-n pii" id="s-pii">0</span><span class="stat-l">PII</span></div>
+    <div class="stat-div"></div>
+    <div class="stat"><span class="stat-n sec" id="s-sec">0</span><span class="stat-l">Secretos</span></div>
+    <div class="stat-div"></div>
+    <div class="stat"><span class="stat-n" id="s-total" style="color:var(--amber)">0</span><span class="stat-l">Total</span></div>
+    <div class="stat-div"></div>
+    <div class="stat" style="align-items:flex-start;flex:1">
+      <span class="stat-n" style="font-size:12px;font-weight:400;color:var(--muted)">El modelo recibiría →</span>
+      <span class="stat-l" style="font-size:9px;color:var(--pii)">los datos detectados no se enviarían · solo etiquetas</span>
+    </div>
+  </div>
+
+  <!-- Anonimizado (after) -->
+  <div id="after-section" style="display:none;margin-top:12px">
+    <div class="panel">
+      <div class="panel-head"><span>Texto enviado al modelo (seudonimizado)</span></div>
+      <div class="panel-body">
+        <div class="after-text" id="after-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detection list -->
+  <div class="det-section" id="det-section" style="display:none;margin-top:12px">
+    <div class="panel">
+      <div class="panel-head"><span>Datos interceptados</span></div>
+      <div id="det-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>AEGIS Privacy Shield · Todo se ejecuta en tu navegador · Sin telemetría</span>
+  <span>21 patrones · PII + Secretos + Archivos sensibles</span>
+</div>
+
+<script>
+// Direcciones (misma lógica que service-worker.js)
+const ADDR_STREET = "(?:calle|c\\/|cl\\.|avenida|avda\\.?|avd\\.?|av\\.|plaza|pza\\.?|pl\\.|paseo|pº|camino|carretera|ctra\\.?|travesía|travesia|trav\\.?|ronda|glorieta|bulevar|rúa)";
+const ADDR_TOKEN = "\\p{L}[\\p{L}'’.\\-]*";
+const ADDR_NUM = "(?:n[ºo°]\\.?\\s*|núm(?:ero)?\\.?\\s*|num(?:ero)?\\.?\\s*)?\\d{1,3}(?!\\d)";
+const ADDR_QTY = "(?!\\s*(?:veces|vez|euros|eur|€|años|minutos|min|horas|días|dias|personas|km|metros|%))";
+const ADDR_FLOOR = "(?:\\s*[,\\-]?\\s*(?:\\d{1,2}\\s?[ºª°]\\.?(?:\\s?[A-Za-z](?!\\p{L}))?|(?:bajo|entresuelo|ático|atico|izquierda|izq|derecha|dcha|dch)(?!\\p{L})\\.?))*";
+const ADDR_ZIP = "(?:0[1-9]|[1-4]\\d|5[0-2])\\d{3}(?!\\d)";
+const ADDR_RE =
+  `(?:(?<![\\p{L}\\p{N}])${ADDR_STREET}\\s+${ADDR_TOKEN}(?:\\s+${ADDR_TOKEN}){0,4}?\\s*,?\\s*${ADDR_NUM}${ADDR_QTY}${ADDR_FLOOR}(?:\\s*,?\\s*${ADDR_ZIP})?` +
+  `|(?<![\\p{L}\\p{N}])(?:c\\.?\\s?p\\.?|código\\s+postal)\\s*[:.]?\\s*${ADDR_ZIP})`;
+const ADDR_CONNECTORS = new Set(["de", "del", "la", "las", "los", "el", "y", "e"]);
+function validateAddress(s){
+  if(/^(?:c\.?\s?p|código)/i.test(s))return true;
+  const name=s.replace(/^\S+\s+/,"").split(/\d/)[0];
+  const tokens=name.split(/[\s,]+/).filter(t=>t&&!/^(?:n[ºo°]\.?|núm\.?|num\.?|número|numero)$/i.test(t));
+  let real=0;
+  for(const t of tokens){
+    if(ADDR_CONNECTORS.has(t))continue;
+    if(!/^\p{Lu}/u.test(t))return false;
+    real++;
+  }
+  return real>0;
+}
+
+// Nombres propios, solo por contexto (misma lógica que service-worker.js)
+const NAME_TOKEN = "\\p{Lu}\\p{Ll}+(?:-\\p{Lu}\\p{Ll}+)*";
+const NAME_PART = "(?:de|del|de la|de los|de las|da|do|van|von|y|e)";
+const NAME_REST = (min) => `(?:\\s+(?:${NAME_PART}\\s+)?${NAME_TOKEN}){${min},3}`;
+const NAME_TRIG =
+  "(?:(?:[Mm]e llamo|[Mm]i nombre (?:completo )?es|[Mm]y name is|Sr\\.|Sra\\.|Srta\\.|Dña\\.|Doña|Don|D\\.|Dr\\.|Dra\\.|Mr\\.|Mrs\\.|Ms\\.)\\s+" +
+  "|(?:[Nn]ombre(?: completo)?|[Aa]pellidos?|[Pp]aciente|[Tt]itular|[Ss]olicitante|[Rr]emitente|[Dd]estinatario|[Ff]irmado(?: por)?|[Ff]ull name|[Nn]ame)\\s*[:=]\\s*)";
+const NAME_ID_AFTER = "(?=\\s*[,(]?\\s*(?:con\\s+)?(?:DNI|NIE)\\b)";
+const NAME_RE =
+  `(?:(?<=${NAME_TRIG})${NAME_TOKEN}${NAME_REST(0)}` +
+  `|(?<![\\p{L}\\p{N}-])${NAME_TOKEN}${NAME_REST(1)}${NAME_ID_AFTER})`;
+const NAME_STOP = new Set(["Google","Microsoft","Amazon","Apple","Python","Java","Javascript","JavaScript","ChatGPT","Claude","Gemini","OpenAI","Anthropic","Windows","Linux","Excel","Word","Banco","Ayuntamiento","Universidad","Empresa","Hospital","Gmail","Outlook"]);
+function validateName(s){return !s.split(/\s+/).some(t=>NAME_STOP.has(t))}
+
+// Patterns (same as service-worker.js)
+const PATTERNS = [
+  { cat:"pii", ph:"EMAIL_ADDRESS", why:"Dirección de correo electrónico",
+    src:/\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g },
+
+  { cat:"pii", ph:"IBAN", why:"Cuenta bancaria internacional (IBAN)",
+    src:/\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4})+\b/g,
+    validate(s){
+      const c=s.replace(/\s/g,"").toUpperCase();
+      if(!/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(c))return false;
+      const r=(c.slice(4)+c.slice(0,4)).split("").map(ch=>/[A-Z]/.test(ch)?(ch.charCodeAt(0)-55).toString():ch).join("");
+      let rem=0; for(const d of r)rem=(rem*10+(+d))%97; return rem===1;
+    }},
+
+  { cat:"pii", ph:"CARD_NUMBER", why:"Tarjeta bancaria (validado con Luhn)",
+    src:/\b(?:\d[ \-]?){13,19}\b/g,
+    validate(s){
+      const d=s.replace(/\D/g,"");
+      if(d.length<13||d.length>19)return false;
+      let sum=0,dbl=false;
+      for(let i=d.length-1;i>=0;i--){let v=+d[i];if(dbl&&(v=v*2-(v>4?9:0)),dbl=!dbl,sum+=v);}
+      return sum%10===0;
+    }},
+
+  { cat:"pii", ph:"PHONE_NUMBER", why:"Número de teléfono",
+    src:/(?<!\d)(\+?[\d][\d\s\-\(\)\.]{7,15}\d)(?!\d)/g,
+    validate(s){return !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(s.trim())} },
+
+  { cat:"pii", ph:"DNI", why:"DNI o NIE español",
+    src:/\b[XYZxyz]?\d{7,8}[TRWAGMYFPDXBNJZSQVHLCKE]\b/g,
+    validate(s){
+      const L="TRWAGMYFPDXBNJZSQVHLCKE";
+      const c=s.toUpperCase().replace(/[\s-]/g,"");
+      const m=c.match(/^([XYZ]?)(\d{7,8})([A-Z])$/);
+      if(!m)return false;
+      const p=m[1]==="X"?"0":m[1]==="Y"?"1":m[1]==="Z"?"2":"";
+      return L[Number(p+m[2])%23]===m[3];
+    }},
+
+  { cat:"pii", ph:"IP_ADDRESS", why:"Dirección IPv4 pública",
+    src:/\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
+    validate(s){return !s.startsWith("127.")&&!s.startsWith("192.168.")&&!/^10\./.test(s)&&!/^172\.(1[6-9]|2\d|3[01])\./.test(s)&&s!=="0.0.0.0"&&!s.startsWith("255.")} },
+
+  { cat:"pii", ph:"ADDRESS", why:"Dirección postal (calle y número, o código postal). Detección aproximada",
+    src:new RegExp(ADDR_RE,"giu"),
+    validate:validateAddress },
+
+  { cat:"pii", ph:"PERSON_NAME", why:"Nombre de persona, detectado por contexto (me llamo, Nombre:, Dr., junto a un DNI). Detección aproximada",
+    src:new RegExp(NAME_RE,"gu"),
+    validate:validateName },
+
+  { cat:"secret", ph:"JWT", why:"Token JWT (credenciales de sesión en Base64)",
+    src:/\beyJ[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}/g },
+
+  { cat:"secret", ph:"OPENAI_KEY", why:"Clave de API de OpenAI",
+    src:/\bsk-(?:proj-|[a-zA-Z0-9]{2,8}-)?[A-Za-z0-9]{40,}\b/g },
+
+  { cat:"secret", ph:"ANTHROPIC_KEY", why:"Clave de API de Anthropic / Claude",
+    src:/\bsk-ant-[A-Za-z0-9\-_]{20,}\b/g },
+
+  { cat:"secret", ph:"GITHUB_TOKEN", why:"Token personal de acceso de GitHub",
+    src:/\bgh[pousr]_[A-Za-z0-9]{36}\b/g },
+
+  { cat:"secret", ph:"AWS_KEY", why:"Clave de acceso AWS IAM",
+    src:/\b(?:AKIA|AIPA|ASIA|AROA)[A-Z0-9]{16}\b/g },
+
+  { cat:"secret", ph:"GOOGLE_KEY", why:"Clave de API de Google Cloud",
+    src:/\bAIza[A-Za-z0-9\-_]{35}\b/g },
+
+  { cat:"secret", ph:"STRIPE_KEY", why:"Clave de API de Stripe",
+    src:/\b(?:sk|pk|rk)_(?:test|live)_[A-Za-z0-9]{16,}\b/g },
+
+  { cat:"secret", ph:"PRIVATE_KEY", why:"Clave privada criptográfica (RSA/EC/Ed25519)",
+    src:/-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/g },
+
+  { cat:"secret", ph:"BEARER_TOKEN", why:"Token Bearer de autenticación HTTP",
+    src:/\bBearer\s+([A-Za-z0-9\-_\.]{20,})/g },
+
+  { cat:"secret", ph:"PASSWORD", why:"Contraseña en código o configuración",
+    src:/(?:password|passwd|pwd|secret|db_pass)\s*[:=]\s*["']([^"'\s]{6,})["']/gi },
+
+  { cat:"secret", ph:"MONGODB_URI", why:"Cadena de conexión MongoDB con credenciales",
+    src:/\bmongodb(?:\+srv)?:\/\/[^\s'"<>,\]]{8,}/g },
+
+  { cat:"secret", ph:"SLACK_TOKEN", why:"Token de bot o usuario de Slack",
+    src:/\bxox[bpsa]-[0-9A-Za-z\-]{10,}/g },
+
+  { cat:"secret", ph:"GOOGLE_OAUTH", why:"Client secret de OAuth de Google",
+    src:/\bclient_secret\s*[:=]\s*["']?([A-Za-z0-9\-_]{20,})["']?/gi },
+];
+
+// Detection
+function detect(text){
+  const results=[];
+  const seen=new Set();
+  let work=text;
+  // Secretos primero: una clave entera no debe trocearse como si fuera un teléfono o un email
+  const ordered=[...PATTERNS.filter(p=>p.cat==="secret"),...PATTERNS.filter(p=>p.cat!=="secret")];
+  for(const p of ordered){
+    const re=new RegExp(p.src.source,p.src.flags);
+    const found=[];
+    for(const m of work.matchAll(re)){
+      const val=m[0];
+      if(seen.has(val))continue;
+      if(p.validate&&!p.validate(val))continue;
+      seen.add(val);
+      found.push(val);
+      results.push({cat:p.cat,ph:p.ph,why:p.why,value:val});
+    }
+    // Enmascara lo ya detectado para que otro patrón no lo cuente dos veces
+    for(const val of found)work=work.split(val).join("\u0001".repeat(val.length));
+  }
+  return results;
+}
+
+function buildSanitized(text,results){
+  let out=text;
+  const counters={};
+  const map=[];
+  for(const r of results){
+    counters[r.ph]=(counters[r.ph]||0)+1;
+    const token=`[${r.ph}_${counters[r.ph]}]`;
+    map.push({original:r.value,token,cat:r.cat});
+  }
+  for(const{original,token}of map) out=out.split(original).join(token);
+  return{sanitized:out,map};
+}
+
+// HTML helpers
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+function renderHighlighted(text,results){
+  if(!text) return '<span class="empty">Escribe algo para ver el análisis…</span>';
+  if(!results.length) return '<span style="color:var(--pii);font-size:11px">✓ Sin datos sensibles detectados</span><br><span class="empty" style="font-size:11px">'+esc(text)+'</span>';
+
+  // Build span ranges
+  const spans=[];
+  for(const r of results){
+    let i=0;
+    while((i=text.indexOf(r.value,i))!==-1){
+      spans.push({start:i,end:i+r.value.length,cat:r.cat,ph:r.ph,value:r.value});
+      i+=r.value.length;
+    }
+  }
+  spans.sort((a,b)=>a.start-b.start);
+
+  let html="",pos=0;
+  for(const s of spans){
+    if(s.start<pos)continue;
+    html+=esc(text.slice(pos,s.start));
+    html+=`<mark class="${s.cat==="pii"?"pii":"sec"}" title="${s.ph}">${esc(s.value)}</mark>`;
+    pos=s.end;
+  }
+  html+=esc(text.slice(pos));
+  return html;
+}
+
+function renderAfter(sanitized,map){
+  let html=esc(sanitized);
+  for(const{token,cat}of map){
+    const cls=cat==="pii"?"pii":"sec";
+    html=html.split(esc(token)).join(`<span class="token ${cls}">${esc(token)}</span>`);
+  }
+  return html;
+}
+
+function renderDetList(results){
+  if(!results.length)return"";
+  const counters={};
+  return results.map(r=>{
+    counters[r.ph]=(counters[r.ph]||0)+1;
+    const token=`[${r.ph}_${counters[r.ph]}]`;
+    const cls=r.cat==="pii"?"pii":"sec";
+    const label=r.cat==="pii"?"PII":"SECRET";
+    const val=r.value.length>44?r.value.slice(0,41)+"…":r.value;
+    return`<div class="det-row">
+      <span class="cat-tag ${cls}">${label}</span>
+      <span class="det-value ${cls}">${esc(val)}</span>
+      <span class="det-arrow">→</span>
+      <span class="det-token ${cls}">${esc(token)}</span>
+      <span class="det-why" style="flex-basis:100%;margin-left:0">${esc(r.why)}</span>
+    </div>`;
+  }).join("");
+}
+
+// Update loop
+const input=document.getElementById("input");
+const output=document.getElementById("output");
+const counter=document.getElementById("counter");
+const statsStrip=document.getElementById("stats-strip");
+const afterSection=document.getElementById("after-section");
+const afterText=document.getElementById("after-text");
+const detSection=document.getElementById("det-section");
+const detList=document.getElementById("det-list");
+
+function update(){
+  const text=input.value;
+  const results=detect(text);
+  const n=results.length;
+  const piiN=results.filter(r=>r.cat==="pii").length;
+  const secN=results.filter(r=>r.cat==="secret").length;
+
+  output.innerHTML=renderHighlighted(text,results);
+
+  counter.textContent=`${n} detectado${n!==1?"s":""}`;
+  counter.classList.toggle("on",n>0);
+
+  if(n>0){
+    document.getElementById("s-pii").textContent=piiN;
+    document.getElementById("s-sec").textContent=secN;
+    document.getElementById("s-total").textContent=n;
+    statsStrip.style.display="flex";
+
+    const{sanitized,map}=buildSanitized(text,results);
+    afterText.innerHTML=renderAfter(sanitized,map);
+    afterSection.style.display="block";
+
+    detList.innerHTML=renderDetList(results);
+    detSection.style.display="block";
+  }else{
+    statsStrip.style.display="none";
+    afterSection.style.display="none";
+    detSection.style.display="none";
+  }
+}
+
+input.addEventListener("input",update);
+
+document.querySelectorAll(".ex-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    input.value=btn.dataset.text.trim().replace(/\\n/g,"\n");
+    update();
+    input.focus();
+  });
+});
+</script>
+<script>window.addEventListener('load',()=>setTimeout(()=>{const b=[...document.querySelectorAll('.ex-btn')].find(x=>x.dataset.text.includes('Me llamo Luc'));b.click()},100))</script></body>
+</html>

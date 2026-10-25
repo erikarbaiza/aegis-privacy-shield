@@ -1,0 +1,32 @@
+<!doctype html><meta charset=utf-8><link rel=stylesheet href=base.css><style>
+body{width:1280px;height:800px}
+.hdr{padding:26px 64px;font-size:26px}
+h1{font:700 40px/1.15 'Courier New',monospace;margin:56px 64px 14px}
+.sub{margin:0 64px 48px;font-size:20px;color:var(--muted)}
+.cols{display:flex;gap:32px;margin:0 64px}
+.p{flex:1;border:1.5px solid var(--line)}
+.p h2{background:var(--bg2);border-bottom:1.5px solid var(--line);padding:14px 20px;font-size:14px;letter-spacing:.16em;color:var(--muted);font-weight:400}
+.p div{padding:30px 24px;font-size:21px;line-height:2.15}
+.q{color:var(--muted)}
+</style>
+<div class=hdr>AEGIS Privacy Shield</div>
+<h1>Lo que escribes no es lo que recibe la IA</h1>
+<p class=sub>Cambia datos personales y claves por etiquetas antes de enviar, y las repone en la respuesta.</p>
+<div class=cols>
+<div class=p><h2>LO QUE ESCRIBES</h2><div>
+Hola, necesito ayuda con una reclamación.<br>
+Me llamo Lucía Fernández Ortega.<br>
+DNI: 45612378C<br>
+Email: lucia@correo-ejemplo.es<br>
+IBAN: ES91 2100 0418 4502 0005 1332<br>
+Vivo en Calle Mayor 5, 3º B<br>
+Clave AWS: AKIAIOSFODNN7EXAMPLE</div></div>
+<div class=p><h2>LO QUE RECIBE LA IA</h2><div class=q>
+Hola, necesito ayuda con una reclamación.<br>
+Me llamo <span class=tag>[PERSON_NAME_1]</span>.<br>
+DNI: <span class=tag>[DNI_1]</span><br>
+Email: <span class=tag>[EMAIL_ADDRESS_1]</span><br>
+IBAN: <span class=tag>[IBAN_1]</span><br>
+Vivo en <span class=tag>[ADDRESS_1]</span><br>
+Clave AWS: <span class="tag s">[AWS_KEY_1]</span></div></div>
+</div>

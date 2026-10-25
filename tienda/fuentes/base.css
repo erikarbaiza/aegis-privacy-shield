@@ -1,0 +1,5 @@
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F5F0E6;--bg2:#EDE8DA;--line:#C8C0B0;--ink:#1A1510;--muted:#6E6455;--pii:#2D7A4A;--sec:#C85020}
+body{font-family:'Courier New',Courier,monospace;background:var(--bg);color:var(--ink);overflow:hidden}
+.hdr{background:var(--ink);color:#F5F0E6;font-weight:700;letter-spacing:.06em}
+.tag{color:var(--pii);font-weight:700}.tag.s{color:var(--sec)}

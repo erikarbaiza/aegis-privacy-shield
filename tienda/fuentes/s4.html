@@ -1,0 +1,24 @@
+<!doctype html><meta charset=utf-8><link rel=stylesheet href=base.css><style>
+body{width:1280px;height:800px}
+.hdr{padding:26px 64px;font-size:26px}
+h1{font:700 48px/1.15 'Courier New',monospace;margin:64px 64px 44px}
+.cols{display:flex;gap:56px;margin:0 64px}
+.c{flex:1}
+h2{font-size:14px;letter-spacing:.16em;color:var(--muted);font-weight:400;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:40px}
+.chips span{border:1.5px solid var(--pii);color:var(--pii);padding:10px 16px;font-size:21px;font-weight:700}
+.chips.s span{border-color:var(--sec);color:var(--sec)}
+ul{list-style:none;font-size:22px;line-height:1.45;color:var(--ink)}
+li{margin-bottom:24px;padding-left:20px;position:relative}li::before{content:"–";position:absolute;left:0;color:var(--muted)}
+</style>
+<div class=hdr>AEGIS Privacy Shield</div>
+<h1>Qué detecta, y qué no</h1>
+<div class=cols>
+<div class=c><h2>DATOS PERSONALES</h2><div class=chips><span>Email</span><span>Teléfono</span><span>DNI / NIE</span><span>IBAN</span><span>Tarjeta</span><span>IP pública</span><span>Dirección (aprox.)</span><span>Nombre (aprox.)</span></div>
+<h2>CREDENCIALES</h2><div class="chips s"><span>Claves de API</span><span>Tokens</span><span>Contraseñas en código</span><span>Claves privadas</span><span>Cadenas de conexión</span></div></div>
+<div class=c><h2>LÍMITES</h2><ul>
+<li>Los nombres solo se detectan con contexto: "me llamo", "Nombre:", "Dra.", junto a un DNI.</li>
+<li>Las direcciones, solo con tipo de vía y número.</li>
+<li>Cambia lo que la web envía; la propia web ve tu cuadro de texto.</li>
+<li>Es seudonimización, no anonimización.</li>
+<li>Probada en ChatGPT, Claude, Gemini y Outlook Web.</li></ul></div></div>
