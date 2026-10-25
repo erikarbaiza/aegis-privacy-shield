@@ -260,12 +260,27 @@ $("enabled").addEventListener("change", () => {
   $("hdr-status").style.background = on ? "#2D7A4A" : "#5A5040";
 });
 
+// El acceso a un servidor propio es un permiso opcional: solo se pide al guardar o probar uno.
+function ensureServerPermission(url, done) {
+  if (!url) { done(true); return; }
+  let origin;
+  try { origin = new URL(url).origin + "/*"; }
+  catch (_) { showStatus("URL del servidor no válida (incluye https://)", "error"); done(false); return; }
+  chrome.permissions.request({ origins: [origin] }, (granted) => {
+    if (!granted) showStatus("Sin permiso para conectar con ese servidor", "error");
+    done(Boolean(granted));
+  });
+}
+
 // Save
 $("save-btn").addEventListener("click", () => {
   const url = $("url").value.trim().replace(/\/$/, "");
   const key = $("key").value.trim();
-  chrome.storage.sync.set({ aegisUrl: url || null, aegisKey: key || null, enabled: $("enabled").checked }, () => {
-    showStatus("Configuración guardada", "ok");
+  ensureServerPermission(url, (ok) => {
+    if (!ok) return;
+    chrome.storage.sync.set({ aegisUrl: url || null, aegisKey: key || null, enabled: $("enabled").checked }, () => {
+      showStatus("Configuración guardada", "ok");
+    });
   });
 });
 
@@ -280,14 +295,17 @@ $("test-btn").addEventListener("click", () => {
   if (!key) { showStatus("Introduce tu clave API para probar", "error"); return; }
 
   const btn = $("test-btn");
-  btn.disabled = true; btn.textContent = "…";
-  showStatus("Conectando…", "info");
+  ensureServerPermission(url, (ok) => {
+    if (!ok) return;
+    btn.disabled = true; btn.textContent = "…";
+    showStatus("Conectando…", "info");
 
-  chrome.runtime.sendMessage({ type: "TEST_CONNECTION", aegisUrl: url, aegisKey: key }, (res) => {
-    btn.disabled = false; btn.textContent = "Probar";
-    if (chrome.runtime.lastError) { showStatus("Error interno", "error"); return; }
-    if (res?.ok) showStatus("Conexión exitosa — AEGIS Neural activo", "ok");
-    else showStatus(res?.error || "No se puede conectar", "error");
+    chrome.runtime.sendMessage({ type: "TEST_CONNECTION", aegisUrl: url, aegisKey: key }, (res) => {
+      btn.disabled = false; btn.textContent = "Probar";
+      if (chrome.runtime.lastError) { showStatus("Error interno", "error"); return; }
+      if (res?.ok) showStatus("Conexión exitosa — AEGIS Neural activo", "ok");
+      else showStatus(res?.error || "No se puede conectar", "error");
+    });
   });
 });
 
@@ -356,9 +374,9 @@ $("gdpr-btn").addEventListener("click", () => {
           categorias: ["PII", "Credenciales y secretos", "Archivos sensibles"],
         },
 
-        cumplimiento_rgpd: {
+        referencias_rgpd: {
           reglamento:  "RGPD — Reglamento (UE) 2016/679",
-          articulos_aplicables: [
+          articulos_relacionados: [
             { articulo: "Art. 5(1)(f)", descripcion: "Integridad y confidencialidad — medidas técnicas para evitar acceso no autorizado" },
             { articulo: "Art. 25",      descripcion: "Privacidad por diseño y por defecto — protección activa en el origen" },
             { articulo: "Art. 32",      descripcion: "Seguridad del tratamiento — seudonimización como medida técnica adecuada" },
@@ -366,7 +384,7 @@ $("gdpr-btn").addEventListener("click", () => {
           nota: "Referencia orientativa. Este informe refleja lo que AEGIS detectó y sustituyó; no certifica cumplimiento del RGPD ni acredita que otros datos no detectados (nombres, direcciones) no se hayan transmitido.",
         },
 
-        historial_anonimizado: auditLog.slice(0, 100).map(e => ({
+        historial_de_detecciones: auditLog.slice(0, 100).map(e => ({
           timestamp:  new Date(e.ts).toISOString(),
           cantidad:   e.count,
           tipos:      e.types     || [],
@@ -418,7 +436,7 @@ function renderExplainView(explain) {
         <div class="explain-footer">
           <span class="explain-badge ${item.cat}">${catLabel}</span>
           <span>Regex local</span>
-          <span>Confianza ${item.confidence}</span>
+          <span>Detección ${item.confidence}</span>
           <span>${item.action}</span>
         </div>
       </div>`;

@@ -37,6 +37,13 @@ Abre `demo.html` con doble clic. Es una página única, sin conexión ni depende
 3. Pulsa **Cargar descomprimida** y elige la carpeta de este repositorio.
 4. Recarga la pestaña de la IA que vayas a usar.
 
+## Permisos
+
+- `storage`: guardar tus ajustes y el historial en tu navegador.
+- `activeTab`: leer el sitio de la pestaña activa cuando abres el popup.
+- Acceso a los sitios de la lista de arriba, solo para interceptar lo que escribes en ellos.
+- Acceso a un servidor propio: es un permiso **opcional**. El navegador te lo pide únicamente si guardas o pruebas una URL de servidor en el popup. Sin servidor, no se pide.
+
 ## Modos
 
 - **Seguro:** solo protege credenciales y claves.
@@ -50,6 +57,8 @@ También puedes marcar sitios de confianza en los que AEGIS no actúa, ver un hi
 
 - Depende de cómo está construida cada web. Si una IA cambia el diseño de su cuadro de texto, la extensión puede dejar de enganchar hasta que se actualicen los selectores en `content.js`. Ya pasó con ChatGPT.
 - La detección local no reconoce nombres propios. Las direcciones solo se detectan con el formato descrito arriba. Para una detección semántica existe un modo opcional con servidor, que no se incluye en este repositorio.
+- No cubre texto transcrito de voz. Cuando los datos llegan fragmentados (un DNI dicho poco a poco entre turnos de una llamada), el detector no los reconoce, porque busca cada dato completo y con su formato.
+- Sustituir identificadores es seudonimización, no anonimización: los datos seudonimizados siguen siendo datos personales según el RGPD, y AEGIS no evalúa el riesgo de reidentificar a alguien cruzando varios datos.
 - Está pensada como proyecto personal y no está publicada en la Chrome Web Store.
 
 ## Pruebas

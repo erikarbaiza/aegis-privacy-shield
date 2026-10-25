@@ -288,8 +288,8 @@ function storeExplainData(interceptions, meta = {}) {
         placeholder: i.placeholder,
         why:         i.why || i.ph,
         method:      "regex_local",
-        confidence:  VALIDATED_PHS.has(i.ph) ? "100%" : HEURISTIC_PHS.has(i.ph) ? "aproximada" : "99%",
-        action:      "anonimizado",
+        confidence:  VALIDATED_PHS.has(i.ph) ? "validada por algoritmo" : HEURISTIC_PHS.has(i.ph) ? "aproximada" : "por patrón",
+        action:      "sustituido por etiqueta",
       })),
     },
   });

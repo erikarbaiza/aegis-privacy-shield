@@ -456,7 +456,7 @@ function showBlockOverlay(interceptions) {
         <div id="aegis-strict-reason">${hasCritical ? "Credencial crítica — no se recomienda enviar" : "Datos personales detectados"}</div>
         <div id="aegis-strict-btns">
           <button id="aegis-cancel-b">Cancelar</button>
-          <button id="aegis-send-b">Enviar anonimizado</button>
+          <button id="aegis-send-b">Enviar con etiquetas</button>
         </div>
       </div>`;
 
