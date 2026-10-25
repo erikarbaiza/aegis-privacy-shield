@@ -24,6 +24,7 @@ const dbg = (...args) => {
 };
 let responseObserver = null;
 let lastPre = null; // último análisis hecho mientras el usuario escribe
+let initDone = false; // true cuando AEGIS ha arrancado en esta página
 let sessionEntityValues = new Set(); // PII values from the most recent outbound message
 
 // Cache aegisMode so click handlers can read it synchronously
@@ -31,6 +32,20 @@ let aegisModeCache = "balanced";
 chrome.storage.sync.get(["aegisMode"], ({ aegisMode }) => { aegisModeCache = aegisMode || "balanced"; });
 chrome.storage.onChanged.addListener(changes => {
   if (changes.aegisMode) aegisModeCache = changes.aegisMode.newValue || "balanced";
+});
+
+// Responde al menú de la extensión para mostrar el estado de esta pestaña
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== "AEGIS_PING") return;
+  const h = location.hostname.replace(/^www\./, "");
+  const site = Object.entries(SITES).find(([d]) => h.includes(d))?.[1];
+  sendResponse({
+    version:     chrome.runtime.getManifest().version,
+    initialized: initDone,
+    input:       Boolean(site && find(site.inputSel)),
+    submit:      Boolean(site && find(site.submitSel)),
+    editors:     document.querySelectorAll("[contenteditable], textarea").length,
+  });
 });
 
 // Bridge: fetch-interceptor (MAIN world) ↔ service worker
@@ -160,6 +175,7 @@ if (cfg) {
 
 // DOM setup
 function initDom() {
+  initDone = true;
   let pre = null;
   let preKey = null;
   let preTimer = null;

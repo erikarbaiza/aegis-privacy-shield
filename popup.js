@@ -35,6 +35,32 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tabHost = new URL(tab.url).hostname.replace(/^www\./, "");
     if (!tabHost) return;
 
+    // Estado de AEGIS en la pestaña actual: se lo pregunta al script de la propia página
+    const diag = $("diag-row");
+    diag.style.display = "block";
+    const supported = (chrome.runtime.getManifest().content_scripts || [])
+      .flatMap(c => c.matches || []).some(m => m.includes("://" + tabHost + "/"));
+    if (!supported) {
+      diag.textContent = "AEGIS no actúa en esta página.";
+    } else {
+      diag.textContent = "Comprobando esta pestaña…";
+      chrome.tabs.sendMessage(tab.id, { type: "AEGIS_PING" }, (res) => {
+        if (chrome.runtime.lastError || !res) {
+          diag.textContent = "AEGIS NO está activo en esta pestaña: el script no responde. Recarga la página.";
+          diag.style.color = "#C83030";
+        } else if (!res.initialized) {
+          diag.textContent = "El script está, pero AEGIS está desactivado en este sitio (lista de confianza).";
+          diag.style.color = "#C83030";
+        } else if (!res.input) {
+          diag.textContent = "AEGIS activo (v" + res.version + "), pero NO encuentra el cuadro de texto. Editores en la página: " + res.editors + ".";
+          diag.style.color = "#C83030";
+        } else {
+          diag.textContent = "AEGIS activo en esta pestaña (v" + res.version + "): cuadro de texto encontrado" + (res.submit ? " y botón de enviar." : ".");
+          diag.style.color = "#2D7A4A";
+        }
+      });
+    }
+
     chrome.storage.sync.get(["allowlist"], ({ allowlist = [] }) => {
       $("allowlist-row").style.display = "flex";
       $("allowlist-site").textContent = tabHost;
