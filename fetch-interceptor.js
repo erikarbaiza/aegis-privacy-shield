@@ -1,8 +1,5 @@
 // Runs in MAIN world (page context) - intercepts fetch before the AI sends data.
 (function () {
-  // Marca de presencia: se puede leer en la consola de la página con window.__aegisLoaded
-  window.__aegisLoaded = "interceptor";
-
   // Pending mapping from content.js DOM intercept (original text -> sanitized text)
   let pending = null;
 

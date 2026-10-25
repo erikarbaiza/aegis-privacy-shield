@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" rx="26" fill="#1A1410"/>
+  <path d="M64 18 L102 33 V63 C102 86 85 102 64 111 C43 102 26 86 26 63 V33 Z" fill="#2D7A4A"/>
+  <path d="M64 18 L102 33 V63 C102 86 85 102 64 111 Z" fill="#245F3B"/>
+  <path d="M64 28 L93 39.5 V63 C93 80 80 92 64 99 C48 92 35 80 35 63 V39.5 Z" fill="none" stroke="#F4F0E4" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="64" y="77" font-family="Courier New, Consolas, monospace" font-weight="700" font-size="46" text-anchor="middle" fill="#F4F0E4">A</text>
+</svg>

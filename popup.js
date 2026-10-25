@@ -1,6 +1,7 @@
 // AEGIS Popup
 
 const $ = id => document.getElementById(id);
+$("app-version").textContent = "AEGIS Privacy Shield v" + chrome.runtime.getManifest().version;
 
 const PII_TYPES = {
   EMAIL_ADDRESS: "Email",

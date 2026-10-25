@@ -1,8 +1,5 @@
 // AEGIS Content Script
 
-// Marca de presencia: se puede leer en la consola con document.documentElement.dataset.aegis
-try { document.documentElement.dataset.aegis = "content-" + chrome.runtime.getManifest().version; } catch (_) {}
-
 // Con el registro de depuración activo, muestra 4 segundos "AEGIS activo" al cargar la página
 setTimeout(() => {
   try {
