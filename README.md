@@ -44,6 +44,8 @@ Una prueba rápida: escribe `Mi DNI es 12345678Z` en ChatGPT y envíalo. Deberí
 - **Secretos (13):** claves de OpenAI, Anthropic, AWS, Google, Stripe y GitHub, tokens JWT, Bearer y Slack, claves privadas, contraseñas en código, cadenas de conexión MongoDB, client secrets de OAuth.
 - Avisa también si pegas nombres de archivos sensibles (`.env`, `id_rsa`, `credentials.json`...).
 
+Una [comparativa con Microsoft Presidio](COMPARATIVA.md) muestra dónde acierta y dónde falla cada herramienta.
+
 ## Dónde funciona
 
 - **Probado (en Edge):** chatgpt.com, claude.ai, gemini.google.com y Outlook Web.
