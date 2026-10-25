@@ -36,9 +36,10 @@ Una prueba rápida: escribe `Mi DNI es 12345678Z` en ChatGPT y envíalo. Deberí
 
 ## Qué detecta
 
-20 patrones. Los datos con formato comprobable (IBAN, tarjeta, DNI/NIE) se validan con algoritmos para evitar falsos positivos.
+21 patrones. Los datos con formato comprobable (IBAN, tarjeta, DNI/NIE) se validan con algoritmos para evitar falsos positivos.
 
-- **Datos personales (7):** email, IBAN (mod-97), tarjeta bancaria (Luhn), teléfono, DNI/NIE (letra de control), IPv4 pública y dirección postal.
+- **Datos personales (8):** email, IBAN (mod-97), tarjeta bancaria (Luhn), teléfono, DNI/NIE (letra de control), IPv4 pública, dirección postal y nombre de persona.
+- **Nombres (detección aproximada):** solo cuando el contexto los delata: tras "me llamo", "mi nombre es", "my name is", un tratamiento (`Sr.`, `Dra.`, `Don`...), un campo (`Nombre:`, `Paciente:`, `Titular:`...) o justo antes de un DNI/NIE. Un nombre suelto en mitad de una frase (`ayer hablé con Marta`) no se detecta, y una lista de palabras conocidas (Google, Python, Banco...) evita confundirlos con empresas y productos.
 - **Direcciones (detección aproximada):** tipo de vía + nombre con mayúsculas + número (`Calle Mayor 5, 3º B`), o un código postal con prefijo (`CP 48001`). No detecta direcciones sin número ni escritas en minúsculas, y deja sin cambiar el nombre de la ciudad.
 - **Secretos (13):** claves de OpenAI, Anthropic, AWS, Google, Stripe y GitHub, tokens JWT, Bearer y Slack, claves privadas, contraseñas en código, cadenas de conexión MongoDB, client secrets de OAuth.
 - Avisa también si pegas nombres de archivos sensibles (`.env`, `id_rsa`, `credentials.json`...).
@@ -73,7 +74,7 @@ Todo se procesa en tu navegador. No hay servidor, cuentas, analíticas ni teleme
 ## Límites conocidos
 
 - AEGIS cambia lo que la web **envía**. No puede impedir que el código de la propia web lea lo que escribes en su cuadro de texto antes de pulsar enviar. Está pensada para evitar que compartas datos por descuido a través del envío normal del chat, no para defenderte de una web que quiera espiarte activamente.
-- La detección local no reconoce nombres propios. Las direcciones solo se detectan con el formato descrito arriba. Para una detección semántica existe un modo opcional con servidor, que no se incluye en este repositorio.
+- Los nombres propios y las direcciones solo se detectan con el contexto o el formato descritos arriba; todo lo demás pasa sin tocar. Para una detección semántica existe un modo opcional con servidor, que no se incluye en este repositorio.
 - No cubre texto transcrito de voz. Cuando los datos llegan fragmentados (un DNI dicho poco a poco entre turnos de una llamada), el detector no los reconoce, porque busca cada dato completo y con su formato.
 - Sustituir identificadores es seudonimización, no anonimización: los datos seudonimizados siguen siendo datos personales según el RGPD, y AEGIS no evalúa el riesgo de reidentificar a alguien cruzando varios datos. No es una herramienta de cumplimiento normativo.
 - Depende de cómo está construida cada web. Si una IA cambia el diseño de su cuadro de texto o la forma de enviar los mensajes, la extensión puede dejar de enganchar hasta que se actualice. Ya pasó con ChatGPT y con Claude.

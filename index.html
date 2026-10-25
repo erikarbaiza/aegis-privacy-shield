@@ -104,7 +104,7 @@ footer a{color:var(--muted)}
     <div class="wrap">
       <h2 id="detecta">Qué detecta</h2>
       <ul class="chips">
-        <li>Email</li><li>Teléfono</li><li>DNI / NIE</li><li>IBAN</li><li>Tarjeta bancaria</li><li>IP pública</li><li>Dirección postal (aprox.)</li>
+        <li>Email</li><li>Teléfono</li><li>DNI / NIE</li><li>IBAN</li><li>Tarjeta bancaria</li><li>IP pública</li><li>Dirección postal (aprox.)</li><li>Nombre propio (por contexto, aprox.)</li>
         <li class="sec">Claves de API</li><li class="sec">Tokens</li><li class="sec">Contraseñas en código</li><li class="sec">Claves privadas</li><li class="sec">Cadenas de conexión</li>
       </ul>
     </div>
@@ -125,7 +125,7 @@ footer a{color:var(--muted)}
       <div>
         <h2>Antes de usarla, ten en cuenta</h2>
         <ul class="plain">
-          <li>No reconoce nombres propios, y las direcciones solo si llevan tipo de vía y número.</li>
+          <li>Los nombres propios solo se detectan por contexto ("me llamo", "Nombre:", "Dra.", junto a un DNI), y las direcciones solo si llevan tipo de vía y número. Un nombre suelto en mitad de una frase pasa sin tocar.</li>
           <li>Cambia lo que la web <strong>envía</strong>. No puede impedir que la propia web lea lo que escribes en su cuadro de texto.</li>
           <li>Sustituir datos es seudonimización, no anonimización, y no sirve como garantía de cumplimiento del RGPD.</li>
           <li>Probada en ChatGPT, Claude, Gemini y Outlook Web con Edge. Si una web cambia su diseño, puede dejar de funcionar.</li>

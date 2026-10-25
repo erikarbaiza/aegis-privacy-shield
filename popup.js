@@ -11,6 +11,7 @@ const PII_TYPES = {
   DNI:           "DNI/NIE",
   IP_ADDRESS:    "IP pública",
   ADDRESS:       "Dirección",
+  PERSON_NAME:   "Nombre",
 };
 const SECRET_TYPES = {
   JWT:            "JWT",
@@ -250,7 +251,8 @@ function getWhy(ph) {
     DNI:           "DNI o NIE español",
     IP_ADDRESS:    "IP pública que puede identificar al usuario",
     ADDRESS:       "Dirección postal (calle y número, o código postal). Detección aproximada",
-    JWT:           "Token JWT con credenciales de sesión",
+    PERSON_NAME:   "Nombre de persona, detectado por contexto (me llamo, Nombre:, Dr., junto a un DNI). Detección aproximada",
+    JWT:          "Token JWT con credenciales de sesión",
     OPENAI_KEY:    "Clave de API de OpenAI",
     ANTHROPIC_KEY: "Clave de API de Anthropic",
     GITHUB_TOKEN:  "Token de acceso de GitHub",
@@ -397,7 +399,7 @@ $("gdpr-btn").addEventListener("click", () => {
         evidencia_tecnica: {
           mecanismo:  "Intercepción de fetch/XHR en MAIN world del navegador (document_start), antes de que la petición abandone el equipo del usuario.",
           validacion: "Algoritmos de validación: Luhn (tarjetas), módulo 97 (IBAN), tabla de caracteres (DNI/NIE).",
-          patrones:   20,
+          patrones:   21,
           categorias: ["PII", "Credenciales y secretos", "Archivos sensibles"],
         },
 

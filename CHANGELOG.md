@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 1.7.0 (2026-10-26)
+
+### Añadido
+- Detección aproximada de nombres de persona por contexto: tras "me llamo", "mi nombre es" o "my name is", tras un tratamiento (`Sr.`, `Dra.`, `Don`...), tras un campo (`Nombre:`, `Paciente:`, `Titular:`...) o justo antes de un DNI/NIE. Admite apellidos con guion y partículas (`García de la Torre`).
+- Una lista de palabras conocidas (Google, Python, Banco, Hospital...) evita confundir empresas y productos con nombres.
+- La demo y el conjunto de pruebas incluyen casos de nombres, con ejemplos que deben detectarse y otros que no.
+
+### Límites
+- Un nombre suelto en mitad de una frase no se detecta.
+
 ## 1.6.0 (2026-10-25)
 
 ### Añadido
