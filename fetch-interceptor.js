@@ -2,9 +2,24 @@
 (function () {
   // Pending mapping from content.js DOM intercept (original text -> sanitized text)
   let pending = null;
+
+  // Registro opcional: localStorage.aegisDebug = "1" en la consola de la página. Nunca escribe valores.
+  const dbg = (...args) => {
+    try { if (localStorage.getItem("aegisDebug") === "1") console.log("[AEGIS dbg]", ...args); } catch (_) {}
+  };
+  const seen = (bodyStr) => pending && pending.entityMap
+    ? Object.values(pending.entityMap).map(v => !!v && bodyStr.includes(v))
+    : null;
+
+  let pendingTimer = null;
   window.addEventListener("aegis-mapping", (e) => {
     pending = e.detail;
-    setTimeout(() => { pending = null; }, 10000);
+    clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(() => { pending = null; }, 120000);
+  });
+  window.addEventListener("aegis-mapping-clear", () => {
+    pending = null;
+    clearTimeout(pendingTimer);
   });
 
   // Race-condition guard: when applyPre fires an emergency SANITIZE (user clicked
@@ -47,8 +62,14 @@
 
     const matchesAI     = isAIUrl(url);
     const matchesGemini = isGeminiUrl(url);
+    if (localStorage.getItem("aegisDebug") === "1") {
+      let ct = null;
+      try { ct = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined)).get("content-type"); } catch (_) {}
+      dbg("fetch POST", url.slice(0, 140), { matchesAI, matchesGemini, pending: !!pending, hold: !!pendingMappingPromise, ct, bodyType: Object.prototype.toString.call(init?.body ?? null) });
+    }
 
-    if (!matchesAI && !matchesGemini) {
+    // Con una sustitución preparada se revisa cualquier POST, aunque la ruta no sea de las conocidas.
+    if (!matchesAI && !matchesGemini && !pending) {
       return _fetch.apply(this, [input, init, ...rest]);
     }
 
@@ -63,13 +84,32 @@
     try {
       // Read body as string.
       // If body is on a Request object, clone it first (reading the original would consume it).
+      // Solo se reemplaza el cuerpo si se consumió un stream; en el resto se deja el original intacto.
       let bodyStr;
       if (hasInitBody) {
-        bodyStr = await toStr(init.body);
-        if (bodyStr) init = { ...init, body: bodyStr };
+        const raw = init.body;
+        bodyStr = await toStr(raw);
+        if (bodyStr && typeof ReadableStream !== "undefined" && raw instanceof ReadableStream) init = { ...init, body: bodyStr };
       } else {
         bodyStr = await toStr(input.clone().body);
-        if (bodyStr) init = { ...(init || {}), method: "POST", body: bodyStr };
+      }
+
+      dbg("fetch body", { type: hasInitBody ? Object.prototype.toString.call(init.body) : "Request", length: bodyStr ? bodyStr.length : 0, pending: !!pending, valuesFoundInBody: bodyStr ? seen(bodyStr) : null });
+
+      // Cuerpos binarios: solo se admite un cambio que conserve la longitud; nunca se reescriben como texto.
+      if (hasInitBody && (init.body instanceof ArrayBuffer || ArrayBuffer.isView(init.body))) {
+        let out = null;
+        if (pending && pending.entityMap) {
+          const b = init.body;
+          const arr = b instanceof ArrayBuffer ? new Uint8Array(b) : new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+          out = xhrBinarySwap(arr, pending.entityMap);
+        }
+        dbg("fetch binary body", { swapped: !!out });
+        if (out) {
+          init = { ...init, body: out };
+          window.dispatchEvent(new CustomEvent("aegis-badge", { detail: { count: pending.interceptions?.length ?? 1 } }));
+        }
+        return _fetch.apply(this, [input, init, ...rest]);
       }
 
       if (bodyStr) {
@@ -99,27 +139,22 @@
             let changed  = false;
             for (const [placeholder, value] of Object.entries(pending.entityMap)) {
               if (!value) continue;
-              const enc_v = encodeURIComponent(value);
-              const enc_p = encodeURIComponent(placeholder);
-              const pls_v = value.replace(/ /g, "+");
-              const pls_p = placeholder.replace(/ /g, "+");
-              if (modified.includes(value)) {
-                modified = modified.split(value).join(placeholder); changed = true;
-              } else if (enc_v !== value && modified.includes(enc_v)) {
-                modified = modified.split(enc_v).join(enc_p); changed = true;
-              } else if (pls_v !== value && modified.includes(pls_v)) {
-                modified = modified.split(pls_v).join(pls_p); changed = true;
-              }
+              const swapped = swapEntity(modified, value, placeholder);
+              if (swapped !== null) { modified = swapped; changed = true; }
             }
             if (changed) newBodyStr = modified;
           }
 
           if (newBodyStr) {
-            init = { ...init, body: newBodyStr };
-            pending = null;
+            init = { ...(init || {}), method: "POST", body: newBodyStr };
+            // pending se conserva: un mismo mensaje puede viajar en varias peticiones seguidas
+            dbg("fetch SWAP OK");
             window.dispatchEvent(new CustomEvent("aegis-badge", { detail: { count } }));
             return _fetch.apply(this, [input, init, ...rest]);
           }
+          dbg("fetch strategy 1 found nothing to swap");
+        } else {
+          dbg("fetch has NO pending mapping (content.js did not prepare one)");
         }
 
         // Strategy 2: parse JSON + on-the-fly AEGIS call
@@ -144,6 +179,43 @@
 
     return _fetch.apply(this, [input, init, ...rest]);
   };
+
+  // Un valor con tildes o "º" puede viajar como í (escapado una o varias veces dentro de otro JSON)
+  function unicodeEscapedVariants(value) {
+    if (!/[^\x00-\x7f]/.test(value)) return [];
+    const out = [];
+    for (const bs of ["\\", "\\\\", "\\\\\\\\"]) {
+      for (const upper of [false, true]) {
+        out.push(value.replace(/[^\x00-\x7f]/g, (c) => {
+          const hex = c.charCodeAt(0).toString(16).padStart(4, "0");
+          return bs + "u" + (upper ? hex.toUpperCase() : hex);
+        }));
+      }
+    }
+    return out;
+  }
+
+  // Sustituye un valor por su etiqueta en todas las formas en que puede aparecer en el cuerpo:
+  // tal cual, con codificación de URL, con "+" por espacio y con escapes \uXXXX.
+  function swapEntity(text, value, placeholder) {
+    const encP = encodeURIComponent(placeholder);
+    const forms = [[value, placeholder]];
+    const encV = encodeURIComponent(value);
+    if (encV !== value) forms.push([encV, encP]);
+    const plsV = value.replace(/ /g, "+");
+    if (plsV !== value) forms.push([plsV, placeholder.replace(/ /g, "+")]);
+    for (const v of unicodeEscapedVariants(value)) {
+      forms.push([v, placeholder]);
+      const ev = encodeURIComponent(v);
+      forms.push([ev, encP]);
+      forms.push([ev.replace(/%20/g, "+"), placeholder]);
+    }
+    let out = text, hit = false;
+    for (const [from, to] of forms) {
+      if (from && out.includes(from)) { out = out.split(from).join(to); hit = true; }
+    }
+    return hit ? out : null;
+  }
 
   // Body -> string (handles all Fetch API body types)
   async function toStr(body) {
@@ -173,6 +245,7 @@
     return (
       url.includes("/backend-api/") ||                      // ChatGPT
       url.includes("/backend-anon/") ||                     // ChatGPT sin sesión
+      url.includes("/claudeai-rpc/") ||                     // Claude (RPC nuevo)
       url.includes("generativelanguage.googleapis.com") ||  // Gemini direct API
       url.includes("StreamGenerateContent") ||              // Gemini web (gRPC-web)
       url.includes("claude.ai/api") ||                      // Claude.ai
@@ -281,8 +354,9 @@
   XMLHttpRequest.prototype.send = function (body) {
     const url    = this._aegisUrl    || "";
     const method = this._aegisMethod || "";
+    if (method === "POST") dbg("xhr POST", url.slice(0, 140), { bodyType: Object.prototype.toString.call(body), matches: isAIUrl(url) || isGeminiUrl(url), pending: !!pending });
 
-    if (method !== "POST" || !body || !(isAIUrl(url) || isGeminiUrl(url))) {
+    if (method !== "POST" || !body || !(isAIUrl(url) || isGeminiUrl(url) || pending)) {
       return _xhrSend.apply(this, [body]);
     }
 
@@ -355,7 +429,7 @@
     // Decodes the URL-encoded body, detects PII via the askAegis bridge, sets
     // `pending`, then re-enters send() so xhrStringSwap can do per-entity swap.
     // `_aegisS2` flag prevents infinite re-entry.
-    if (typeof body === "string" && !this._aegisS2) {
+    if (typeof body === "string" && !this._aegisS2 && (isAIUrl(url) || isGeminiUrl(url))) {
       this._aegisS2 = true;
       const self = this, b = body;
       let decoded = b;
@@ -393,11 +467,8 @@
     let m = bodyStr, hit = false;
     for (const [ph, v] of Object.entries(pend.entityMap)) {
       if (!v) continue;
-      const ev = encodeURIComponent(v), ep = encodeURIComponent(ph);
-      const pv = v.replace(/ /g, "+"), pp = ph.replace(/ /g, "+");
-      if (m.includes(v))                   { m = m.split(v).join(ph);  hit = true; }
-      else if (ev !== v && m.includes(ev)) { m = m.split(ev).join(ep); hit = true; }
-      else if (pv !== v && m.includes(pv)) { m = m.split(pv).join(pp); hit = true; }
+      const swapped = swapEntity(m, v, ph);
+      if (swapped !== null) { m = swapped; hit = true; }
     }
     return hit ? m : null;
   }

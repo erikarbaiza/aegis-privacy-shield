@@ -4,7 +4,13 @@
 let pendingSession = null;
 let skipNext = false;
 let badge = null;
+
+// Registro opcional: localStorage.aegisDebug = "1" en la consola de la página. Nunca escribe valores.
+const dbg = (...args) => {
+  try { if (localStorage.getItem("aegisDebug") === "1") console.log("[AEGIS dbg]", ...args); } catch (_) {}
+};
 let responseObserver = null;
+let lastPre = null; // último análisis hecho mientras el usuario escribe
 let sessionEntityValues = new Set(); // PII values from the most recent outbound message
 
 // Cache aegisMode so click handlers can read it synchronously
@@ -29,6 +35,12 @@ window.addEventListener("aegis-sanitize-request", async (e) => {
 window.addEventListener("aegis-badge", (e) => {
   const count = e.detail?.count ?? 0;
   if (count > 0) showBadge(`${count} dato${count !== 1 ? "s" : ""} protegido${count !== 1 ? "s" : ""}`, "ok");
+  // Si el Enter llegó tarde (el sitio vació el cuadro antes), la restauración en la respuesta se prepara aquí
+  if (count > 0 && lastPre && lastPre.sessionToken) {
+    pendingSession = lastPre.sessionToken;
+    sessionEntityValues = new Set(Object.values(lastPre.entityMap || {}));
+    watchResponse();
+  }
 });
 
 // Site config
@@ -140,23 +152,43 @@ function initDom() {
   let preTimer = null;
   let fallbackRegistered = false;
 
+  // Deja la sustitución preparada en la página mientras se escribe: así no depende de cuándo llegue el Enter
+  function publishMapping(p) {
+    window.dispatchEvent(new CustomEvent("aegis-mapping", {
+      detail: {
+        original:      p.original,
+        sanitized:     p.sanitizedText,
+        interceptions: p.interceptions,
+        entityMap:     p.entityMap || {},
+      },
+    }));
+  }
+
   function schedulePrefetch() {
     clearTimeout(preTimer);
     preTimer = setTimeout(async () => {
       const el = find(cfg.inputSel);
       if (!el) return;
       const text = getText(el);
-      if (!text || text === preKey) return;
+      if (!text) { preKey = null; pre = null; return; }
+      if (text === preKey) return;
       preKey = text;
       pre = null;
       try {
         const r = await bg("SANITIZE", { text });
-        if (!r?.error && preKey === text) pre = { original: text, ...r };
+        if (!r?.error && preKey === text) {
+          pre = { original: text, ...r };
+          lastPre = pre;
+          dbg("prefetch", { textLen: text.length, detected: (pre.interceptions || []).length });
+          if (pre.interceptions?.length) publishMapping(pre);
+          else window.dispatchEvent(new CustomEvent("aegis-mapping-clear"));
+        }
       } catch (_) {}
     }, 50);
   }
 
   function applyPre(text) {
+    dbg("applyPre", { textLen: text.length, cached: !!(pre && pre.original === text), detected: pre ? (pre.interceptions || []).length : null });
     if (!pre || pre.original !== text) {
       // No cached result yet - emergency path:
       // Tell the fetch/XHR interceptor to hold the outgoing request for up to 400ms
@@ -216,6 +248,7 @@ function initDom() {
     const el = find(cfg.inputSel);
     if (!el || el._aegisInput) return;
     el._aegisInput = true;
+    dbg("input attached", el.tagName, (el.id || String(el.className)).slice(0, 50));
 
     el.addEventListener("input", schedulePrefetch);
     new MutationObserver(schedulePrefetch).observe(el, {
@@ -226,6 +259,7 @@ function initDom() {
       el._aegisKey = true;
       el.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" || e.shiftKey) return;
+        dbg("Enter pressed", { skipNext });
         if (skipNext) { skipNext = false; return; }
         const text = getText(el);
         if (aegisModeCache === "strict" && text.trim()) {
@@ -244,6 +278,7 @@ function initDom() {
     const submit = find(cfg.submitSel);
     if (!submit || submit._aegis) return;
     submit._aegis = true;
+    dbg("submit button attached");
 
     submit.addEventListener("click", (e) => {
       if (skipNext) { skipNext = false; return; }
