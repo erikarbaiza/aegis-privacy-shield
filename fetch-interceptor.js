@@ -197,18 +197,26 @@
 
   // Sustituye un valor por su etiqueta en todas las formas en que puede aparecer en el cuerpo:
   // tal cual, con codificación de URL, con "+" por espacio y con escapes \uXXXX.
+  // application/x-www-form-urlencoded: espacio como "+", y "+", "," o "!'()~" en porcentaje
+  function formEncode(s) {
+    return encodeURIComponent(s)
+      .replace(/[!'()~]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase())
+      .replace(/%20/g, "+");
+  }
+
   function swapEntity(text, value, placeholder) {
     const encP = encodeURIComponent(placeholder);
     const forms = [[value, placeholder]];
     const encV = encodeURIComponent(value);
     if (encV !== value) forms.push([encV, encP]);
+    const frmV = formEncode(value);
+    if (frmV !== value && frmV !== encV) forms.push([frmV, encP]);
     const plsV = value.replace(/ /g, "+");
     if (plsV !== value) forms.push([plsV, placeholder.replace(/ /g, "+")]);
     for (const v of unicodeEscapedVariants(value)) {
       forms.push([v, placeholder]);
-      const ev = encodeURIComponent(v);
-      forms.push([ev, encP]);
-      forms.push([ev.replace(/%20/g, "+"), placeholder]);
+      forms.push([encodeURIComponent(v), encP]);
+      forms.push([formEncode(v), encP]);
     }
     let out = text, hit = false;
     for (const [from, to] of forms) {
