@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AEGIS Privacy Shield",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Cambia DNI, IBAN, claves y otros datos por etiquetas antes de enviarlos a ChatGPT, Claude o Gemini. Todo en tu navegador.",
   "icons": {
     "16": "icons/icon16.png",

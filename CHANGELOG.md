@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## 1.7.1 (2026-10-26)
+
+### Cambiado
+- Descripción de la extensión: ahora dice qué hace y deja de nombrar Copilot, que no está verificado a fondo.
+- Ficha y material gráfico para Chrome Web Store en la carpeta `tienda/`.
+
 ## 1.7.0 (2026-10-26)
 
 ### Añadido
