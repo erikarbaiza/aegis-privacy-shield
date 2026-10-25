@@ -64,6 +64,24 @@ function validateAddress(s) {
   return real > 0;
 }
 
+// Nombres propios, solo por contexto: tras "me llamo", "Nombre:", "Paciente:", un tratamiento (Sr., Dra.)
+// o pegados a un DNI/NIE. No hay modelo: un nombre sin ninguna de esas pistas no se detecta.
+const NAME_TOKEN = "\\p{Lu}\\p{Ll}+(?:-\\p{Lu}\\p{Ll}+)*";
+const NAME_PART = "(?:de|del|de la|de los|de las|da|do|van|von|y|e)";
+const NAME_REST = (min) => `(?:\\s+(?:${NAME_PART}\\s+)?${NAME_TOKEN}){${min},3}`;
+const NAME_TRIG =
+  "(?:(?:[Mm]e llamo|[Mm]i nombre (?:completo )?es|[Mm]y name is|Sr\\.|Sra\\.|Srta\\.|Dña\\.|Doña|Don|D\\.|Dr\\.|Dra\\.|Mr\\.|Mrs\\.|Ms\\.)\\s+" +
+  "|(?:[Nn]ombre(?: completo)?|[Aa]pellidos?|[Pp]aciente|[Tt]itular|[Ss]olicitante|[Rr]emitente|[Dd]estinatario|[Ff]irmado(?: por)?|[Ff]ull name|[Nn]ame)\\s*[:=]\\s*)";
+const NAME_ID_AFTER = "(?=\\s*[,(]?\\s*(?:con\\s+)?(?:DNI|NIE)\\b)";
+const NAME_RE =
+  `(?:(?<=${NAME_TRIG})${NAME_TOKEN}${NAME_REST(0)}` +
+  `|(?<![\\p{L}\\p{N}-])${NAME_TOKEN}${NAME_REST(1)}${NAME_ID_AFTER})`;
+const NAME_STOP = new Set(["Google", "Microsoft", "Amazon", "Apple", "Python", "Java", "Javascript", "JavaScript", "ChatGPT", "Claude", "Gemini", "OpenAI", "Anthropic", "Windows", "Linux", "Excel", "Word", "Banco", "Ayuntamiento", "Universidad", "Empresa", "Hospital", "Gmail", "Outlook"]);
+
+function validateName(s) {
+  return !s.split(/\s+/).some(t => NAME_STOP.has(t));
+}
+
 // Local regex detector - instant, no server needed
 // cat: "pii" = datos personales / "secret" = credenciales y claves de API
 const PATTERNS = [
@@ -133,6 +151,12 @@ const PATTERNS = [
     why: "Dirección postal (calle y número, o código postal). Detección aproximada",
     re: () => new RegExp(ADDR_RE, "giu"),
     validate: validateAddress,
+  },
+
+  { cat: "pii", type: "person_name", ph: "PERSON_NAME",
+    why: "Nombre de persona, detectado por contexto (me llamo, Nombre:, Dr., junto a un DNI). Detección aproximada",
+    re: () => new RegExp(NAME_RE, "gu"),
+    validate: validateName,
   },
 
   // Secrets & Credentials
@@ -275,7 +299,7 @@ chrome.runtime.onStartup.addListener(updateExtensionBadge);
 
 // Explain data - stores last detection for popup Explain View
 const VALIDATED_PHS = new Set(["IBAN", "CARD_NUMBER", "DNI", "IP_ADDRESS"]);
-const HEURISTIC_PHS = new Set(["ADDRESS"]);
+const HEURISTIC_PHS = new Set(["ADDRESS", "PERSON_NAME"]);
 
 function storeExplainData(interceptions, meta = {}) {
   chrome.storage.local.set({

@@ -106,7 +106,7 @@ tr:hover td{background:rgba(45,122,74,.04)}
 
 <div class="hdr">
   <span class="hdr-title">AEGIS · Suite de Tests</span>
-  <span class="hdr-sub">v1.5 · 20 patrones · sin servidor · sin dependencias</span>
+  <span class="hdr-sub">v1.7 · 21 patrones · sin servidor · sin dependencias</span>
 </div>
 
 <div class="controls">
@@ -141,6 +141,20 @@ function validateAddress(s) {
   }
   return real > 0;
 }
+
+// Nombres propios por contexto (misma lógica que service-worker.js)
+const NAME_TOKEN = "\\p{Lu}\\p{Ll}+(?:-\\p{Lu}\\p{Ll}+)*";
+const NAME_PART = "(?:de|del|de la|de los|de las|da|do|van|von|y|e)";
+const NAME_REST = (min) => `(?:\\s+(?:${NAME_PART}\\s+)?${NAME_TOKEN}){${min},3}`;
+const NAME_TRIG =
+  "(?:(?:[Mm]e llamo|[Mm]i nombre (?:completo )?es|[Mm]y name is|Sr\\.|Sra\\.|Srta\\.|Dña\\.|Doña|Don|D\\.|Dr\\.|Dra\\.|Mr\\.|Mrs\\.|Ms\\.)\\s+" +
+  "|(?:[Nn]ombre(?: completo)?|[Aa]pellidos?|[Pp]aciente|[Tt]itular|[Ss]olicitante|[Rr]emitente|[Dd]estinatario|[Ff]irmado(?: por)?|[Ff]ull name|[Nn]ame)\\s*[:=]\\s*)";
+const NAME_ID_AFTER = "(?=\\s*[,(]?\\s*(?:con\\s+)?(?:DNI|NIE)\\b)";
+const NAME_RE =
+  `(?:(?<=${NAME_TRIG})${NAME_TOKEN}${NAME_REST(0)}` +
+  `|(?<![\\p{L}\\p{N}-])${NAME_TOKEN}${NAME_REST(1)}${NAME_ID_AFTER})`;
+const NAME_STOP = new Set(["Google","Microsoft","Amazon","Apple","Python","Java","Javascript","JavaScript","ChatGPT","Claude","Gemini","OpenAI","Anthropic","Windows","Linux","Excel","Word","Banco","Ayuntamiento","Universidad","Empresa","Hospital","Gmail","Outlook"]);
+function validateName(s) { return !s.split(/\s+/).some(t => NAME_STOP.has(t)); }
 
 // PATTERNS - identical copy of service-worker.js
 const PATTERNS = [
@@ -203,6 +217,11 @@ const PATTERNS = [
    why:"Dirección postal (calle y número, o código postal). Detección aproximada",
    re:()=>new RegExp(ADDR_RE,"giu"),
    validate:validateAddress},
+
+  {cat:"pii",type:"person_name",ph:"PERSON_NAME",
+   why:"Nombre de persona, detectado por contexto (me llamo, Nombre:, Dr., junto a un DNI). Detección aproximada",
+   re:()=>new RegExp(NAME_RE,"gu"),
+   validate:validateName},
 
   {cat:"secret",type:"jwt",ph:"JWT",
    why:"Token JWT — credenciales de sesión codificadas en Base64",
@@ -543,6 +562,77 @@ const CASES=[
   {id:"address_fp_008",ph:"ADDRESS",cat:"pii",ok:false,n:0,
    desc:"'ronda' de un torneo",
    text:"ronda 2 del torneo"},
+
+  // PII - PERSON_NAME
+  {id:"name_tp_001",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"'Me llamo' + nombre y dos apellidos",
+   text:"Me llamo Lucía Fernández Ortega y vivo en Bilbao"},
+  {id:"name_tp_002",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"'Mi nombre es' con una sola palabra",
+   text:"Mi nombre es Iñaki."},
+  {id:"name_tp_003",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Campo 'Nombre:'",
+   text:"Nombre: Erik Prueba"},
+  {id:"name_tp_004",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Campo 'Paciente:'",
+   text:"Paciente: Jon Aranburu Lasa, varón de 58 años"},
+  {id:"name_tp_005",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Tratamiento 'Dra.'",
+   text:"Resumen para la Dra. Marta Ibarra Goikoetxea."},
+  {id:"name_tp_006",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Nombre seguido de DNI",
+   text:"1) Carlos Muñoz Pérez, DNI 30987654F"},
+  {id:"name_tp_007",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Nombre con el DNI entre paréntesis",
+   text:"Mi marido, Iñaki Etxeberria Sáenz (DNI 23456789D), es cotitular"},
+  {id:"name_tp_008",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Apellido con partícula 'de la'",
+   text:"Habló con el Sr. García de la Torre ayer"},
+  {id:"name_tp_009",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"'My name is' en inglés",
+   text:"My name is John Smith and I work here"},
+  {id:"name_tp_010",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Nombre seguido de NIE",
+   text:"Amara Okafor, NIE X1234567L"},
+  {id:"name_tp_011",ph:"PERSON_NAME",cat:"pii",ok:true,n:1,
+   desc:"Apellido compuesto con guion",
+   text:"Titular: María José Pérez-Goñi"},
+  {id:"name_fp_001",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"'Me llamo' sin nombre propio",
+   text:"Me llamo la atención"},
+  {id:"name_fp_002",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Cargo con mayúsculas, sin disparador",
+   text:"Soy Ingeniero de Datos"},
+  {id:"name_fp_003",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"'DNI' sin nombre delante",
+   text:"Total, DNI de los alumnos"},
+  {id:"name_fp_004",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Empresa tras 'Cliente:'",
+   text:"Cliente: Microsoft"},
+  {id:"name_fp_005",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"'Nombre:' seguido de minúsculas",
+   text:"Nombre: producto estrella"},
+  {id:"name_fp_006",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Saludo genérico antes de DNI",
+   text:"Estimado cliente, adjunto el DNI"},
+  {id:"name_fp_007",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Lugar con mayúsculas",
+   text:"Quedamos en la Plaza Mayor"},
+  {id:"name_fp_008",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Lenguaje y DNI en la misma frase",
+   text:"Python es un lenguaje, DNI no aplica"},
+  {id:"name_fp_009",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Institución",
+   text:"La Universidad de Deusto abre el lunes"},
+  {id:"name_fp_010",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Frase corriente con mayúscula inicial",
+   text:"Hola, necesito ayuda con una reclamación."},
+  {id:"name_fp_011",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"Productos conocidos",
+   text:"Tengo un problema con Gmail y con Outlook"},
+  {id:"name_fp_012",ph:"PERSON_NAME",cat:"pii",ok:false,n:0,
+   desc:"'Nombre:' con un producto",
+   text:"Nombre: Google Cloud"},
 ];
 
 // Runner

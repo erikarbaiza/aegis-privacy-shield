@@ -128,7 +128,7 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
     <div class="hdr-brand">AEGIS Privacy Shield</div>
     <div class="hdr-sub">Demo interactiva — sin extensión, sin servidor, sin telemetría</div>
   </div>
-  <div class="hdr-pill">20 patrones · Local</div>
+  <div class="hdr-pill">21 patrones · Local</div>
 </div>
 
 <div class="main">
@@ -147,6 +147,9 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
     </button>
     <button class="ex-btn pii" data-text="Envíalo a Calle Mayor 5, 3º B, 48001 Bilbao. Mi otra dirección es Avenida de la Constitución 24 y el CP 28013.">
       Dirección postal
+    </button>
+    <button class="ex-btn pii" data-text="Me llamo Lucía Fernández Ortega y mi DNI es 45612378C. Mi marido, Iñaki Etxeberria Sáenz (DNI 23456789D), es cotitular. Atendió la Dra. Marta Ibarra.">
+      Nombres por contexto
     </button>
     <button class="ex-btn sec" data-text="sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890AbCdEfGhIjKlMnOpQrStUv-AAAAAAA">
       Anthropic API Key
@@ -222,7 +225,7 @@ mark.sec{background:var(--sec-bg);color:var(--sec);border-bottom:1.5px solid var
 
 <div class="footer">
   <span>AEGIS Privacy Shield · Todo se ejecuta en tu navegador · Sin telemetría</span>
-  <span>20 patrones · PII + Secretos + Archivos sensibles</span>
+  <span>21 patrones · PII + Secretos + Archivos sensibles</span>
 </div>
 
 <script>
@@ -249,6 +252,20 @@ function validateAddress(s){
   }
   return real>0;
 }
+
+// Nombres propios, solo por contexto (misma lógica que service-worker.js)
+const NAME_TOKEN = "\\p{Lu}\\p{Ll}+(?:-\\p{Lu}\\p{Ll}+)*";
+const NAME_PART = "(?:de|del|de la|de los|de las|da|do|van|von|y|e)";
+const NAME_REST = (min) => `(?:\\s+(?:${NAME_PART}\\s+)?${NAME_TOKEN}){${min},3}`;
+const NAME_TRIG =
+  "(?:(?:[Mm]e llamo|[Mm]i nombre (?:completo )?es|[Mm]y name is|Sr\\.|Sra\\.|Srta\\.|Dña\\.|Doña|Don|D\\.|Dr\\.|Dra\\.|Mr\\.|Mrs\\.|Ms\\.)\\s+" +
+  "|(?:[Nn]ombre(?: completo)?|[Aa]pellidos?|[Pp]aciente|[Tt]itular|[Ss]olicitante|[Rr]emitente|[Dd]estinatario|[Ff]irmado(?: por)?|[Ff]ull name|[Nn]ame)\\s*[:=]\\s*)";
+const NAME_ID_AFTER = "(?=\\s*[,(]?\\s*(?:con\\s+)?(?:DNI|NIE)\\b)";
+const NAME_RE =
+  `(?:(?<=${NAME_TRIG})${NAME_TOKEN}${NAME_REST(0)}` +
+  `|(?<![\\p{L}\\p{N}-])${NAME_TOKEN}${NAME_REST(1)}${NAME_ID_AFTER})`;
+const NAME_STOP = new Set(["Google","Microsoft","Amazon","Apple","Python","Java","Javascript","JavaScript","ChatGPT","Claude","Gemini","OpenAI","Anthropic","Windows","Linux","Excel","Word","Banco","Ayuntamiento","Universidad","Empresa","Hospital","Gmail","Outlook"]);
+function validateName(s){return !s.split(/\s+/).some(t=>NAME_STOP.has(t))}
 
 // Patterns (same as service-worker.js)
 const PATTERNS = [
@@ -296,6 +313,10 @@ const PATTERNS = [
   { cat:"pii", ph:"ADDRESS", why:"Dirección postal (calle y número, o código postal). Detección aproximada",
     src:new RegExp(ADDR_RE,"giu"),
     validate:validateAddress },
+
+  { cat:"pii", ph:"PERSON_NAME", why:"Nombre de persona, detectado por contexto (me llamo, Nombre:, Dr., junto a un DNI). Detección aproximada",
+    src:new RegExp(NAME_RE,"gu"),
+    validate:validateName },
 
   { cat:"secret", ph:"JWT", why:"Token JWT (credenciales de sesión en Base64)",
     src:/\beyJ[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}/g },
