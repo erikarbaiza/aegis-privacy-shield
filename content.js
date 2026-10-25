@@ -3,6 +3,16 @@
 // Marca de presencia: se puede leer en la consola con document.documentElement.dataset.aegis
 try { document.documentElement.dataset.aegis = "content-" + chrome.runtime.getManifest().version; } catch (_) {}
 
+// Con el registro de depuración activo, muestra 4 segundos "AEGIS activo" al cargar la página
+setTimeout(() => {
+  try {
+    if (localStorage.getItem("aegisDebug") === "1") {
+      showBadge("activo v" + chrome.runtime.getManifest().version, "clean");
+      setTimeout(hideBadge, 4000);
+    }
+  } catch (_) {}
+}, 600);
+
 // State
 let pendingSession = null;
 let skipNext = false;
