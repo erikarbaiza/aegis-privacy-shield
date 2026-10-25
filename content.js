@@ -1,5 +1,8 @@
 // AEGIS Content Script
 
+// Marca de presencia: se puede leer en la consola con document.documentElement.dataset.aegis
+try { document.documentElement.dataset.aegis = "content-" + chrome.runtime.getManifest().version; } catch (_) {}
+
 // State
 let pendingSession = null;
 let skipNext = false;

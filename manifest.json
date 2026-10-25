@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AEGIS Privacy Shield",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Intercepta datos personales antes de que lleguen a ChatGPT, Claude, Gemini o Copilot.",
   "permissions": ["storage", "activeTab"],
   "optional_host_permissions": ["<all_urls>"],
